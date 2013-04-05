@@ -116,7 +116,7 @@ bool Client_Idnt(struct Client* c)
     perror("Sprintf");
     return false;
   }
-  puts(buf);
+
   ssize_t len = strlen(buf);
   return write(c->rSock, buf, len) == len;
 }

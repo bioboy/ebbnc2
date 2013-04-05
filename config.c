@@ -157,7 +157,7 @@ struct Config* Config_Load(const char* path)
   }
   
   if (!c->listenIP) {
-    c->listenIP = strdup("::");
+    c->listenIP = strdup("0.0.0.0");
     if (!c->listenIP) goto strduperror;
   }
   

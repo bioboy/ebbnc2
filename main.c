@@ -28,16 +28,6 @@
 
 const char* program = "ebBNC";
 const char* version = "0.1b";
-const char* configFile = "ebbnc.conf";
-
-struct Config* LoadConfig(char* argv0)
-{
-  char path[PATH_MAX];
-  strncpy(path, dirname(argv0), sizeof(path));
-  strncat(path, "/", sizeof(path));
-  strncat(path, configFile, sizeof(path));
-  return Config_Load(path);
-}
 
 bool InitialiseSignals()
 {
@@ -66,13 +56,18 @@ void Hline()
 
 int main(int argc, char** argv)
 {
+  if (argc != 2) {
+    fprintf(stderr, "usage: %s <config file>\n", argv[0]);
+    return 1;
+  }
+
   Hline();
   printf("%s %s by ebftpd team\n", program, version);
   Hline();
   atexit(Hline);
   
   printf("Loading config file ..\n");
-  struct Config* cfg = LoadConfig(argv[0]);
+  struct Config* cfg = Config_Load(argv[1]);
   if (!cfg) return 1;
   
   printf("Initialising signals ..\n");
@@ -102,7 +97,7 @@ int main(int argc, char** argv)
     Config_Free(&cfg);
     return 1;
   }
-/*
+
   printf("Forking into background ..\n");
   pid_t pid = Daemonise();
   if (pid < 0) {
@@ -114,6 +109,7 @@ int main(int argc, char** argv)
   
   if (pid > 0) {
     printf("Bouncer running as PID #%i\n", pid);
+    Hline();
     _exit(0);
   }
   
@@ -125,7 +121,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "Failed to create PID file. This is only a warning.\n"); 
     }
   }
-  */
+
   printf("Waiting for connections ..\n");
   Server_Loop(srv);
   
