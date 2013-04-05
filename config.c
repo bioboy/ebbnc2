@@ -32,7 +32,7 @@ struct Config* Config_New()
   c->listenPort = -1;
   c->remoteIP = NULL;
   c->remotePort = -1;
-  c->idnt = false;
+  c->idnt = true;
   c->identTimeout = 10;
   c->relayTimeout = 30;
   c->dnsLookup = true;

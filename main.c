@@ -102,7 +102,7 @@ int main(int argc, char** argv)
     Config_Free(&cfg);
     return 1;
   }
-
+/*
   printf("Forking into background ..\n");
   pid_t pid = Daemonise();
   if (pid < 0) {
@@ -125,7 +125,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "Failed to create PID file. This is only a warning.\n"); 
     }
   }
-  
+  */
   printf("Waiting for connections ..\n");
   Server_Loop(srv);
   

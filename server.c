@@ -106,7 +106,7 @@ void Server_Accept(struct Server* s)
     return;
   }
   
-  Client_Launch(s->cfg, sock, &addr);
+  Client_Launch(s, sock, &addr);
 }
 
 void Server_Loop(struct Server* s)

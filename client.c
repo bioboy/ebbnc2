@@ -38,6 +38,7 @@ struct Client* Client_New()
   c->rSock = -1;
   memset(&c->rAddr, 0, sizeof(c->rAddr));
   c->cfg = NULL;
+  c->srv = NULL;
   
   return c;
 }
@@ -96,7 +97,7 @@ bool Client_Idnt(struct Client* c)
       return false;
     }
     
-    if (!IdentLookup(&localAddr, &c->cAddr, c->cfg->identTimeout, user)) {
+    if (!IdentLookup(&c->srv->addr, &c->cAddr, c->cfg->identTimeout, user)) {
       strcpy(user, "*");
     }
   }
@@ -110,12 +111,12 @@ bool Client_Idnt(struct Client* c)
     strncpy(hostname, ip, sizeof(ip));
   }
   
-  char* buf = Sprintf("IDNT %s@%s:%s\r\n", user, ip, hostname);
+  char* buf = Sprintf("IDNT %s@%s:%s\n", user, ip, hostname);
   if (!buf) {
     perror("Sprintf");
     return false;
   }
-  
+  puts(buf);
   ssize_t len = strlen(buf);
   return write(c->rSock, buf, len) == len;
 }
@@ -242,7 +243,7 @@ void *Client_ThreadMain(void* cv)
   return NULL;
 }
 
-void Client_Launch(struct Config* cfg, int sock, const struct sockaddr_storage* addr)
+void Client_Launch(struct Server* srv, int sock, const struct sockaddr_storage* addr)
 {
   struct Client* c = Client_New();
   if (!c) {
@@ -250,8 +251,9 @@ void Client_Launch(struct Config* cfg, int sock, const struct sockaddr_storage* 
     return;
   }
   
-  c->cfg = cfg;
+  c->cfg = srv->cfg;
   c->cSock = sock;
+  c->srv = srv;
   memcpy(&c->cAddr, addr, sizeof(c->cAddr));
   pthread_create(&c->threadId, NULL, Client_ThreadMain, (void*)c);
 }

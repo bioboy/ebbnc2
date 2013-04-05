@@ -67,7 +67,7 @@ bool IdentLookup(const struct sockaddr_storage* localAddr,
   int localPort = PortFromSockaddr(localAddr);
   int remotePort = PortFromSockaddr(peerAddr);
   
-  if (fprintf(fp, "%i, %i\r\n", localPort, remotePort) < 0) {
+  if (fprintf(fp, "%i, %i\r\n", remotePort, localPort) < 0) {
     fclose(fp);
     return false;
   }
@@ -75,7 +75,7 @@ bool IdentLookup(const struct sockaddr_storage* localAddr,
   int replyLocalPort;
   int replyRemotePort;
   
-  int ret = fscanf(fp, "%i , %i : USERID :%*[^:]:%255s\r\n", &replyLocalPort, &replyRemotePort, user);
+  int ret = fscanf(fp, "%i , %i : USERID :%*[^:]:%255s\r\n", &replyRemotePort, &replyLocalPort, user);
   fclose(fp);
   
   return ret == 3 && replyLocalPort == localPort && replyRemotePort == remotePort;

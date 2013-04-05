@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include "config.h"
+#include "server.h"
 
 struct Client
 {
@@ -30,8 +31,9 @@ struct Client
   int rSock;
   struct sockaddr_storage rAddr;
   struct Config* cfg;
+  struct Server* srv;
 };
 
-void Client_Launch(struct Config* cfg, int sock, const struct sockaddr_storage* addr);
+void Client_Launch(struct Server* srv, int sock, const struct sockaddr_storage* addr);
 
 #endif
