@@ -47,6 +47,8 @@ void Config_Free(struct Config** cp)
     struct Config* c = *cp;
     free(c->listenIP);
     free(c->remoteIP);
+    free(c->pidFile);
+    free(c->welcomeMsg);
     free(c);
     *cp = NULL;
   }

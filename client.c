@@ -229,7 +229,8 @@ bool Client_Welcome(struct Client* c)
 void *Client_ThreadMain(void* cv)
 {
   struct Client* c = (struct Client*) cv;
-
+  pthread_detach(c->threadId);
+  
   if (Client_Connect(c) &&
       Client_Idnt(c) &&
       Client_Welcome(c)) {
