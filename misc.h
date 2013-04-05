@@ -30,4 +30,6 @@ int AlreadyRunning(const char* pidFile);
 bool CreatePIDFile(const char* pidFile);
 int Daemonise();
 
+#define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof z; })
+
 #endif

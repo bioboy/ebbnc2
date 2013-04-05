@@ -135,8 +135,8 @@ pid_t Daemonise()
   pid_t pid = fork();
   if (pid != 0) return pid;
   
-  freopen("/dev/null", "w", stdout);
-  freopen("/dev/null", "w", stdin);
+  IGNORE_RESULT(freopen("/dev/null", "w", stdout));
+  IGNORE_RESULT(freopen("/dev/null", "w", stdin));
   
   setsid();
   return 0;

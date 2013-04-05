@@ -62,7 +62,7 @@ void Client_ErrorReply(struct Client* c, const char* msg)
     return;
   }
   
-  write(c->cSock, buf, strlen(buf));
+  IGNORE_RESULT(write(c->cSock, buf, strlen(buf)));
   free(buf);
 }
 
