@@ -41,11 +41,6 @@ bool InitialiseSignals()
     return false;
   }
   
-  if (sigaction(SIGINT, &sa, NULL) < 0) {
-    perror("sigaction");
-    return false;
-  }
-  
   return true;
 }
 

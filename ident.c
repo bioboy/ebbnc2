@@ -44,15 +44,9 @@ bool IdentLookup(const struct sockaddr_storage* localAddr,
 
   int sock = socket(addr.ss_family, SOCK_STREAM, 0);
   if (sock < 0) return false;
-  
-  {
-    struct timeval tv;      
-    tv.tv_sec = timeout;
-    tv.tv_usec = 0;
 
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv));
-    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(tv));
-  }
+  SetReadTimeout(sock, timeout);
+  SetWriteTimeout(sock, timeout);
 
   if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
     return false;

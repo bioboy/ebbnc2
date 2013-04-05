@@ -134,6 +134,10 @@ bool Client_Connect(struct Client* c)
     return false;
   }
   
+  if (c->cfg->writeTimeout > 0) {
+    SetWriteTimeout(c->rSock, c->cfg->writeTimeout);
+  }
+
   {
     int optval = 1;
     setsockopt(c->rSock, IPPROTO_TCP, TCP_NODELAY, (char*)&optval, sizeof(optval));
@@ -149,7 +153,7 @@ bool Client_Connect(struct Client* c)
 
 void Client_Relay(struct Client* c)
 {
-  int timeout = c->cfg->relayTimeout * 1000;
+  int timeout = c->cfg->idleTimeout == 0 ? -1 : c->cfg->idleTimeout * 1000;
   char buf[BUFSIZ];
   struct pollfd fds[2];
   
@@ -164,7 +168,7 @@ void Client_Relay(struct Client* c)
   while (true) {
     int ret = poll(fds, 2, timeout);
     if (ret == 0) {
-      Client_ErrorReply(c, "Timeout");
+      Client_ErrorReply(c, "Idle timeout");
       break;
     }
     
@@ -181,7 +185,11 @@ void Client_Relay(struct Client* c)
       
       ssize_t ret = write(c->rSock, buf, len);
       if (ret < 0) {
-        Client_ErrnoReply(c, "write", errno);
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          Client_ErrorReply(c, "Server write timeout");
+        } else {
+          Client_ErrnoReply(c, "write", errno);
+        }
         break;
       }
       
@@ -203,8 +211,13 @@ void Client_Relay(struct Client* c)
         break;
       }
       
-      if (write(c->cSock, buf, len) != len) {
-        break;
+      ssize_t ret = write(c->cSock, buf, len);
+      if (ret < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          Client_ErrorReply(c, "Client write timeout");
+        } else {
+          Client_ErrnoReply(c, "write", errno);
+        }
       }
     }
   }
@@ -230,7 +243,11 @@ bool Client_Welcome(struct Client* c)
 void *Client_ThreadMain(void* cv)
 {
   struct Client* c = (struct Client*) cv;
-  pthread_detach(c->threadId);
+
+  pthread_detach(c->threadId);  
+  if (c->cfg->writeTimeout > 0) {
+    SetWriteTimeout(c->cSock, c->cfg->writeTimeout);
+  }
   
   if (Client_Connect(c) &&
       Client_Idnt(c) &&

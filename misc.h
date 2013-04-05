@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr);
 int PortFromSockaddr(const struct sockaddr_storage* addr);
@@ -29,6 +30,8 @@ char* Sprintf(const char* fmt, ...);
 int AlreadyRunning(const char* pidFile);
 bool CreatePIDFile(const char* pidFile);
 int Daemonise();
+void SetReadTimeout(int sock, time_t timeout);
+void SetWriteTimeout(int sock, time_t timeout);
 
 #define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof z; })
 

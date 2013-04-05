@@ -34,7 +34,8 @@ struct Config* Config_New()
   c->remotePort = -1;
   c->idnt = true;
   c->identTimeout = 10;
-  c->relayTimeout = 30;
+  c->idleTimeout = 0;
+  c->writeTimeout = 30;
   c->dnsLookup = true;
   c->pidFile = NULL;
   
@@ -124,8 +125,13 @@ struct Config* Config_Load(const char* path)
         error = true;
       }
     }
-    else if (!strncasecmp(buf, "relaytimeout=", 13) && len > 13) {
-      if (sscanf(buf + 13, "%i", &c->relayTimeout) != 1 || c->relayTimeout < 0) {
+    else if (!strncasecmp(buf, "idletimeout=", 12) && len > 12) {
+      if (sscanf(buf + 12, "%i", &c->idleTimeout) != 1 || c->idleTimeout < 0) {
+        error = true;
+      }
+    }
+    else if (!strncasecmp(buf, "writetimeout=", 13) && len > 13) {
+      if (sscanf(buf + 13, "%i", &c->writeTimeout) != 1 || c->writeTimeout < 0) {
         error = true;
       }
     }

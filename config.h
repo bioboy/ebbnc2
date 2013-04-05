@@ -28,7 +28,8 @@ struct Config
   int remotePort;
   bool idnt;
   int identTimeout;
-  int relayTimeout;
+  int idleTimeout;
+  int writeTimeout;
   bool dnsLookup;
   char* pidFile;
   char* welcomeMsg;
