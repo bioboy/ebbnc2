@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __EBBNC_SERVER_H
-#define __EBBNC_SERVER_H
+#ifndef EBBNC_SERVER_H
+#define EBBNC_SERVER_H
 
 #include <arpa/inet.h>
 #include "config.h"

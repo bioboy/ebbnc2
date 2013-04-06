@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __EBBNC_MISC_H
-#define __EBBNC_MISC_H
+#ifndef EBBNC_MISC_H
+#define EBBNC_MISC_H
 
 #include <stdbool.h>
 #include <arpa/inet.h>

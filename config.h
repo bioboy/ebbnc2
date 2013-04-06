@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __EBBNC_CONFIG_H
-#define __EBBNC_CONFIG_H
+#ifndef EBBNC_CONFIG_H
+#define EBBNC_CONFIG_H
 
 #include <stdbool.h>
 

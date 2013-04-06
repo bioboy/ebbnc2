@@ -65,13 +65,11 @@ bool Server_Listen2(struct Server* s, const char* ip, int port)
   }
   
   if (bind(s->sock, (struct sockaddr*)&s->addr, sizeof(s->addr)) < 0) {
-    close(s->sock);
     perror("bind");
     return false;
   }
   
   if (listen(s->sock, SOMAXCONN) < 0) {
-    close(s->sock);
     perror("listen");
     return false;
   }

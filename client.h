@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __EBBNC_CLIENT_H
-#define __EBBNC_CLIENT_H
+#ifndef EBBNC_CLIENT_H
+#define EBBNC_CLIENT_H
 
 #include <arpa/inet.h>
 #include <pthread.h>
