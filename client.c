@@ -244,7 +244,6 @@ void *Client_ThreadMain(void* cv)
 {
   struct Client* c = (struct Client*) cv;
 
-  pthread_detach(c->threadId);  
   if (c->cfg->writeTimeout > 0) {
     SetWriteTimeout(c->cSock, c->cfg->writeTimeout);
   }
@@ -272,5 +271,10 @@ void Client_Launch(struct Server* srv, int sock, const struct sockaddr_storage* 
   c->cSock = sock;
   c->srv = srv;
   memcpy(&c->cAddr, addr, sizeof(c->cAddr));
-  pthread_create(&c->threadId, NULL, Client_ThreadMain, (void*)c);
+  
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, CLIENT_STACKSIZE);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+  pthread_create(&c->threadId, &attr, Client_ThreadMain, (void*)c);
 }
