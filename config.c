@@ -25,7 +25,7 @@
 
 struct Config* Config_New()
 {
-  struct Config* c = (struct Config*) malloc(sizeof(struct Config));
+  struct Config* c = malloc(sizeof(struct Config));
   if (!c) return NULL;
   
   c->listenIP = NULL;

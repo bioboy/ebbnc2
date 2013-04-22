@@ -26,7 +26,7 @@
 
 struct Server* Server_New()
 {
-  struct Server* s = (struct Server*) malloc(sizeof(struct Server));
+  struct Server* s = malloc(sizeof(struct Server));
   if (!s) return NULL;
   
   s->sock = -1;

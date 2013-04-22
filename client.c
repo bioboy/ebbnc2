@@ -30,7 +30,7 @@
 
 struct Client* Client_New()
 {
-  struct Client* c = (struct Client*) malloc(sizeof(struct Client));
+  struct Client* c = malloc(sizeof(struct Client));
   if (!c) return NULL;
   
   c->cSock = -1;
@@ -276,5 +276,5 @@ void Client_Launch(struct Server* srv, int sock, const struct sockaddr_storage* 
   pthread_attr_init(&attr);
   pthread_attr_setstacksize(&attr, CLIENT_STACKSIZE);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_create(&c->threadId, &attr, Client_ThreadMain, (void*)c);
+  pthread_create(&c->threadId, &attr, Client_ThreadMain, c);
 }
