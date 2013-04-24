@@ -2,5 +2,4 @@
 ebbnc
 *.pid
 core
-test.conf
-
+*.conf
