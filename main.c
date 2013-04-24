@@ -27,7 +27,7 @@
 #include "misc.h"
 
 const char* program = "ebBNC";
-const char* version = "0.1b";
+const char* version = "0.2b";
 
 bool InitialiseSignals()
 {

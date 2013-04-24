@@ -1,0 +1,7 @@
+EBBMC Changelog - ebftpd team
+
+0.2b:
+* Fixed memory leak in Client_Idnt.
+
+0.1b:
+* Initial release.

@@ -118,7 +118,9 @@ bool Client_Idnt(struct Client* c)
   }
 
   ssize_t len = strlen(buf);
-  return write(c->rSock, buf, len) == len;
+  bool ret = write(c->rSock, buf, len) == len;
+  free(buf);
+  return ret;
 }
 
 bool Client_Connect(struct Client* c)
