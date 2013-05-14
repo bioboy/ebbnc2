@@ -18,7 +18,7 @@
 #ifndef EBBNC_XTEA_H
 #define EBBNC_XTEA_H
 
-#include <sys/types.h>
+#include <stdio.h>
 
 #define XTEA_BLOCK_SIZE     8
 #define XTEA_KEY_SIZE       16

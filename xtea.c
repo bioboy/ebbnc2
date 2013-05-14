@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <errno.h>
 #include <fcntl.h>
 #include "xtea.h"
 
@@ -59,7 +58,6 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
     unsigned int padding;
     
     if (dstSize < srcLen) {
-        errno = EINVAL;
         return -1;
     }
 
@@ -78,7 +76,6 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
         padding = XTEA_BLOCK_SIZE;
     } 
     else {
-        errno = EINVAL;
         return -1;
     }
 
@@ -104,12 +101,12 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
     unsigned char iv[XTEA_BLOCK_SIZE];
     
     if (dstSize < srcLen) {
-        errno = EINVAL;
         return -1;
     }
 
     memcpy(iv, ivec, sizeof(iv));
     while (remaining >= XTEA_BLOCK_SIZE) {
+    
         memcpy(block, src, XTEA_BLOCK_SIZE);
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
             block[i] = (unsigned char) block[i] ^ iv[i];
@@ -130,7 +127,6 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
         padding = XTEA_BLOCK_SIZE;
     } 
     else {
-        errno = EINVAL;
         return -1;
     }
 
@@ -176,7 +172,6 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
     int padding = 0;
     
     if (dstSize < srcLen || srcLen % XTEA_BLOCK_SIZE != 0) {
-        errno = EINVAL;
         return -1;
     }
 
@@ -189,7 +184,6 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
     
     padding = *(dst - 1) - '0';
     if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
-        errno = EINVAL;
         return -1;
     }
 
@@ -209,12 +203,12 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
     unsigned char iv[XTEA_BLOCK_SIZE];
     
     if (dstSize < srcLen || srcLen % XTEA_BLOCK_SIZE != 0) {
-        errno = EINVAL;
         return -1;
     }
 
     memcpy(iv, ivec, sizeof(ivec));
     while (remaining > 0) {
+    
         memcpy(temp, src, XTEA_BLOCK_SIZE);
         XTeaDecrypt(src, dst, key);
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
@@ -229,7 +223,6 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
     
     padding = *(dst - 1) - '0';
     if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
-        errno = EINVAL;
         return -1;
     }
 
