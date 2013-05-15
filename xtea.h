@@ -38,6 +38,6 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
 ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
                        unsigned char* dst, size_t dstSize,
                        const unsigned char ivec[XTEA_BLOCK_SIZE],
-                       const unsigned char key[XTEA_KEY_SIZE]);                       
+                       const unsigned char key[XTEA_KEY_SIZE]);
 
 #endif

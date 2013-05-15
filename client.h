@@ -25,17 +25,17 @@
 
 #define CLIENT_STACKSIZE 1001024
 
-struct Client
-{
-  pthread_t threadId;
-  int cSock;
-  struct sockaddr_storage cAddr;
-  int rSock;
-  struct sockaddr_storage rAddr;
-  struct Config* cfg;
-  struct Server* srv;
+struct Client {
+    pthread_t threadId;
+    int cSock;
+    struct sockaddr_storage cAddr;
+    int rSock;
+    struct sockaddr_storage rAddr;
+    struct Config* cfg;
+    struct Server* srv;
 };
 
-void Client_Launch(struct Server* srv, int sock, const struct sockaddr_storage* addr);
+void Client_Launch(struct Server* srv, int sock,
+                   const struct sockaddr_storage* addr);
 
 #endif

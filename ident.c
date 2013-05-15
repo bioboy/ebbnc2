@@ -25,52 +25,51 @@
 
 #define IDENT_PORT      113
 
-bool IdentLookup(const struct sockaddr_storage* localAddr, 
-                 const struct sockaddr_storage* peerAddr, 
+bool IdentLookup(const struct sockaddr_storage* localAddr,
+                 const struct sockaddr_storage* peerAddr,
                  time_t timeout, char* user)
 {
-  struct sockaddr_storage addr;
-  memcpy(&addr, peerAddr, sizeof(addr));
-  switch (addr.ss_family) {
-    case AF_INET:
-      ((struct sockaddr_in*)&addr)->sin_port = htons(IDENT_PORT);
-      break;
-    case AF_INET6:
-      ((struct sockaddr_in6*)&addr)->sin6_port = htons(IDENT_PORT);
-      break;
-    default:
-      return false;
-  }
+    struct sockaddr_storage addr;
+    memcpy(&addr, peerAddr, sizeof(addr));
+    switch (addr.ss_family) {
+        case AF_INET:
+            ((struct sockaddr_in*)&addr)->sin_port = htons(IDENT_PORT);
+            break;
+        case AF_INET6:
+            ((struct sockaddr_in6*)&addr)->sin6_port = htons(IDENT_PORT);
+            break;
+        default:
+            return false;
+    }
 
-  int sock = socket(addr.ss_family, SOCK_STREAM, 0);
-  if (sock < 0) return false;
+    int sock = socket(addr.ss_family, SOCK_STREAM, 0);
+    if (sock < 0) { return false; }
 
-  SetReadTimeout(sock, timeout);
-  SetWriteTimeout(sock, timeout);
+    SetReadTimeout(sock, timeout);
+    SetWriteTimeout(sock, timeout);
 
-  if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-    return false;
-  }
-  
-  FILE *fp = fdopen(sock, "r+");
-  if (!fp) {
-    close(sock);
-    return false;
-  }
-  
-  int localPort = PortFromSockaddr(localAddr);
-  int remotePort = PortFromSockaddr(peerAddr);
-  
-  if (fprintf(fp, "%i, %i\r\n", remotePort, localPort) < 0) {
+    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) { return false; }
+
+    FILE* fp = fdopen(sock, "r+");
+    if (!fp) {
+        close(sock);
+        return false;
+    }
+
+    int localPort = PortFromSockaddr(localAddr);
+    int remotePort = PortFromSockaddr(peerAddr);
+
+    if (fprintf(fp, "%i, %i\r\n", remotePort, localPort) < 0) {
+        fclose(fp);
+        return false;
+    }
+
+    int replyLocalPort;
+    int replyRemotePort;
+
+    int ret = fscanf(fp, "%i , %i : USERID :%*[^:]:%255s\r\n", &replyRemotePort,
+                     &replyLocalPort, user);
     fclose(fp);
-    return false;
-  }
-  
-  int replyLocalPort;
-  int replyRemotePort;
-  
-  int ret = fscanf(fp, "%i , %i : USERID :%*[^:]:%255s\r\n", &replyRemotePort, &replyLocalPort, user);
-  fclose(fp);
-  
-  return ret == 3 && replyLocalPort == localPort && replyRemotePort == remotePort;
+
+    return ret == 3 && replyLocalPort == localPort && replyRemotePort == remotePort;
 }

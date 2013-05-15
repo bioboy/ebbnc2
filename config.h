@@ -20,19 +20,18 @@
 
 #include <stdbool.h>
 
-struct Config
-{
-  char* listenIP;
-  int listenPort;
-  char* remoteIP;
-  int remotePort;
-  bool idnt;
-  int identTimeout;
-  int idleTimeout;
-  int writeTimeout;
-  bool dnsLookup;
-  char* pidFile;
-  char* welcomeMsg;
+struct Config {
+    char* listenIP;
+    int listenPort;
+    char* remoteIP;
+    int remotePort;
+    bool idnt;
+    int identTimeout;
+    int idleTimeout;
+    int writeTimeout;
+    bool dnsLookup;
+    char* pidFile;
+    char* welcomeMsg;
 };
 
 struct Config* Config_New();

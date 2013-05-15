@@ -26,90 +26,88 @@
 
 struct Server* Server_New()
 {
-  struct Server* s = malloc(sizeof(struct Server));
-  if (!s) return NULL;
-  
-  s->sock = -1;
-  memset(&s->addr, 0, sizeof(s->addr));
-  s->cfg = NULL;
-  
-  return s;
+    struct Server* s = malloc(sizeof(struct Server));
+    if (!s) { return NULL; }
+
+    s->sock = -1;
+    memset(&s->addr, 0, sizeof(s->addr));
+    s->cfg = NULL;
+
+    return s;
 }
 
 void Server_Free(struct Server** sp)
 {
-  if (*sp) {
-    struct Server* s = *sp;
-    if (s->sock >= 0) close(s->sock);
-    free(s);
-    *sp = NULL;
-  }
+    if (*sp) {
+        struct Server* s = *sp;
+        if (s->sock >= 0) { close(s->sock); }
+        free(s);
+        *sp = NULL;
+    }
 }
 
 bool Server_Listen2(struct Server* s, const char* ip, int port)
 {
-  if (!IPPortToSockaddr(ip, port, &s->addr)) {
-    fprintf(stderr, "Invalid listenip.\n");
-    return false;
-  }
-  
-  s->sock = socket(s->addr.ss_family, SOCK_STREAM, 0);
-  if (s->sock < 0) {
-    perror("socket");
-    return false;
-  }
-  
-  {
-    int optval = 1;
-    setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));    
-  }
-  
-  if (bind(s->sock, (struct sockaddr*)&s->addr, sizeof(s->addr)) < 0) {
-    perror("bind");
-    return false;
-  }
-  
-  if (listen(s->sock, SOMAXCONN) < 0) {
-    perror("listen");
-    return false;
-  }
-    
-  return true;
+    if (!IPPortToSockaddr(ip, port, &s->addr)) {
+        fprintf(stderr, "Invalid listenip.\n");
+        return false;
+    }
+
+    s->sock = socket(s->addr.ss_family, SOCK_STREAM, 0);
+    if (s->sock < 0) {
+        perror("socket");
+        return false;
+    }
+
+    {
+        int optval = 1;
+        setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    }
+
+    if (bind(s->sock, (struct sockaddr*)&s->addr, sizeof(s->addr)) < 0) {
+        perror("bind");
+        return false;
+    }
+
+    if (listen(s->sock, SOMAXCONN) < 0) {
+        perror("listen");
+        return false;
+    }
+
+    return true;
 }
 
 struct Server* Server_Listen(struct Config* cfg)
 {
-  struct Server* s = Server_New();
-  if (!s) {
-    perror("Server_New");
-    return NULL;
-  }
-  
-  s->cfg = cfg;
-  if (!Server_Listen2(s, cfg->listenIP, cfg->listenPort)) {
-    Server_Free(&s);
-    return NULL;
-  }
-  
-  return s;
+    struct Server* s = Server_New();
+    if (!s) {
+        perror("Server_New");
+        return NULL;
+    }
+
+    s->cfg = cfg;
+    if (!Server_Listen2(s, cfg->listenIP, cfg->listenPort)) {
+        Server_Free(&s);
+        return NULL;
+    }
+
+    return s;
 }
 
 void Server_Accept(struct Server* s)
 {
-  struct sockaddr_storage addr;
-  socklen_t len = sizeof(addr);
-  int sock = accept(s->sock, (struct sockaddr*)&addr, &len);
-  if (sock < 0) {
-    perror("accept");
-    return;
-  }
-  
-  Client_Launch(s, sock, &addr);
+    struct sockaddr_storage addr;
+    socklen_t len = sizeof(addr);
+    int sock = accept(s->sock, (struct sockaddr*)&addr, &len);
+    if (sock < 0) {
+        perror("accept");
+        return;
+    }
+
+    Client_Launch(s, sock, &addr);
 }
 
 void Server_Loop(struct Server* s)
 {
-  while (true) {
-    Server_Accept(s);
-  }
+    while (true) { Server_Accept(s); }
 }

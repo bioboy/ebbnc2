@@ -21,11 +21,10 @@
 #include <arpa/inet.h>
 #include "config.h"
 
-struct Server
-{
-  int sock;
-  struct sockaddr_storage addr;
-  struct Config* cfg;
+struct Server {
+    int sock;
+    struct sockaddr_storage addr;
+    struct Config* cfg;
 };
 
 struct Server* Server_Listen(struct Config* cfg);
