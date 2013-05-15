@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <poll.h>
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <errno.h>
@@ -145,7 +146,7 @@ bool Client_Connect(struct Client* c)
         setsockopt(c->rSock, IPPROTO_TCP, TCP_NODELAY, (char*)&optval, sizeof(optval));
     }
 
-    if (connect(c->rSock, (struct sockaddr*)&c->rAddr, sizeof(c->rAddr)) < 0) {
+    if (connect(c->rSock, (struct sockaddr*)&c->rAddr, SockaddrLen(&c->rAddr)) < 0) {
         Client_ErrnoReply(c, "connect", errno);
         return false;
     }

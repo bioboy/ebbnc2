@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include "ident.h"
@@ -48,7 +49,7 @@ bool IdentLookup(const struct sockaddr_storage* localAddr,
     SetReadTimeout(sock, timeout);
     SetWriteTimeout(sock, timeout);
 
-    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) { return false; }
+    if (connect(sock, (struct sockaddr*)&addr, SockaddrLen(&addr)) < 0) { return false; }
 
     FILE* fp = fdopen(sock, "r+");
     if (!fp) {

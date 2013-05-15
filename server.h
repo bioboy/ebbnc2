@@ -18,7 +18,7 @@
 #ifndef EBBNC_SERVER_H
 #define EBBNC_SERVER_H
 
-#include <arpa/inet.h>
+#include <sys/socket.h>
 #include "config.h"
 
 struct Server {

@@ -19,7 +19,7 @@
 #define EBBNC_MISC_H
 
 #include <stdbool.h>
-#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <time.h>
 #include <sys/types.h>
 
@@ -39,6 +39,7 @@ void SetWriteTimeout(int sock, time_t timeout);
 bool StrToInt(const char* s, int* i);
 char* PromptInput(const char* prompt, const char* defaultValue);
 void Hline();
+socklen_t SockaddrLen(const struct sockaddr_storage* addr);
 
 #define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof(z); })
 

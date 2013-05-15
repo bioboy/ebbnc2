@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <netinet/in.h>
 #include <unistd.h>
 #include "misc.h"
 #include "server.h"
@@ -64,7 +65,7 @@ bool Server_Listen2(struct Server* s, const char* ip, int port)
         setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     }
 
-    if (bind(s->sock, (struct sockaddr*)&s->addr, sizeof(s->addr)) < 0) {
+    if (bind(s->sock, (struct sockaddr*)&s->addr, SockaddrLen(&s->addr)) < 0) {
         perror("bind");
         return false;
     }

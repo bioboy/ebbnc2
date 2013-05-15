@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "misc.h"
 
 bool ValidIP(const char* ip)
@@ -254,4 +256,11 @@ char* PromptInput(const char* prompt, const char* defaultValue)
 void Hline()
 {
     printf("------------------------------------------------------- --- -> >\n");
+}
+
+socklen_t SockaddrLen(const struct sockaddr_storage* addr)
+{
+    return addr->ss_family == AF_INET ?
+           sizeof(struct sockaddr_in) :
+           sizeof(struct sockaddr_in6);
 }
