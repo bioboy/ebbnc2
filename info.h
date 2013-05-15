@@ -19,7 +19,7 @@
 #define EBBNC_INFO_H
 
 #define EBBNC_PROGRAM   "ebBNC"
-#define EBBNC_VERSION   "0.3b"
+#define EBBNC_VERSION   "0.4b"
 #define EBBNC_AUTHOR    "ebftpd team"
 
 #endif
