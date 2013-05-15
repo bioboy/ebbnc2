@@ -1,4 +1,19 @@
-ebbnc
-=====
+ebBNC - ebftpd port bouncer by ebftpd team
+------------------------------------------------------- --- -> >
 
-ebftpd port bouncer
+ebBNC can either operate with a normal text file based config,
+or an embedded encrypted config.
+
+* Normal text file config:
+
+  1. Compile the bouncer by running 'make'.
+  2. Edit ebbnc.conf to suit your needs.
+  3. Run the bouncer './ebbnc ebbnc.conf'.
+  
+* Embedded encrypted config:
+
+  1. Compile and run the conf editor tool by running 'make conf'.
+  2. Compile the bouncer by running 'make'.
+  3. Run the bouncer './ebbnc' (not ebbnc.conf argument).
+
+------------------------------------------------------- --- -> >
