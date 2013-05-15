@@ -42,7 +42,7 @@ char* Encrypt(const char* plain, const char* key)
 {
     size_t plainLen = strlen(plain);
     size_t cipherSize = plainLen + XTEA_BLOCK_SIZE * 2;
-    char* cipher = malloc(cipherSize);
+    char* cipher = calloc(cipherSize, sizeof(char));
     if (!cipher) { return NULL; }
 
     if (XTeaGenerateIVec((unsigned char*)cipher) < 0) { return NULL; }
@@ -60,7 +60,7 @@ char* Encrypt(const char* plain, const char* key)
     len += XTEA_BLOCK_SIZE;
 
     size_t encodedSize = len * 2 + 1;
-    char* encoded = malloc(encodedSize);
+    char* encoded = calloc(encodedSize, sizeof(char));
     if (!encoded) {
         free(cipher);
         return NULL;

@@ -29,20 +29,16 @@
 
 struct Config* Config_New()
 {
-    struct Config* c = malloc(sizeof(struct Config));
+    struct Config* c = calloc(1, sizeof(struct Config));
     if (!c) { return NULL; }
 
-    c->listenIP = NULL;
     c->listenPort = -1;
-    c->remoteIP = NULL;
     c->remotePort = -1;
     c->idnt = true;
     c->identTimeout = 10;
     c->idleTimeout = 0;
     c->writeTimeout = 30;
     c->dnsLookup = true;
-    c->pidFile = NULL;
-    c->welcomeMsg = NULL;
 
     return c;
 }
@@ -220,7 +216,7 @@ struct Config* Config_LoadFile(const char* path)
     long size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    char* buffer = malloc(size + 1);
+    char* buffer = calloc(size + 1, sizeof(char));
     if (!buffer) {
         fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
         fclose(fp);
@@ -236,8 +232,6 @@ struct Config* Config_LoadFile(const char* path)
         return NULL;
     }
 
-    *(buffer + size) = '\0';
-
     struct Config* c = Config_LoadBuffer(buffer);
     free(buffer);
 
@@ -250,7 +244,7 @@ char* Config_DecryptEmbedded(const char* key)
 {
     size_t confLen = strlen(CONF_EMBEDDED);
     size_t cipherSize = confLen / 2 + 1;
-    char* cipher = malloc(cipherSize);
+    char* cipher = calloc(cipherSize, sizeof(char));
     if (!cipher) { return NULL; }
 
     ssize_t cipherLen = HexDecode(CONF_EMBEDDED, confLen, cipher, cipherSize);
@@ -260,7 +254,7 @@ char* Config_DecryptEmbedded(const char* key)
     }
 
     size_t plainSize = cipherLen;
-    char* plain = malloc(plainSize);
+    char* plain = calloc(plainSize, sizeof(char));
     if (!plain) {
         free(cipher);
         return NULL;

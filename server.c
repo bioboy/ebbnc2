@@ -27,12 +27,10 @@
 
 struct Server* Server_New()
 {
-    struct Server* s = malloc(sizeof(struct Server));
+    struct Server* s = calloc(1, sizeof(struct Server));
     if (!s) { return NULL; }
 
     s->sock = -1;
-    memset(&s->addr, 0, sizeof(s->addr));
-    s->cfg = NULL;
 
     return s;
 }

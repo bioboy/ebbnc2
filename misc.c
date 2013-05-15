@@ -97,7 +97,7 @@ char* Sprintf(const char* fmt, ...)
     size_t len = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
-    char* buf = malloc(len + 1);
+    char* buf = calloc(len + 1, sizeof(char));
     if (!buf) {
         va_end(args);
         return NULL;
@@ -117,7 +117,7 @@ char* Scatprintf(char* s, const char* fmt, ...)
     int len = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
-    char* buf1 = malloc(len + 1);
+    char* buf1 = calloc(len + 1, sizeof(char));
     if (!buf1) {
         va_end(args);
         free(s);
@@ -131,7 +131,7 @@ char* Scatprintf(char* s, const char* fmt, ...)
     char* buf2 = buf1;
     if (s != NULL) {
         size_t size = strlen(s) + len + 1;
-        buf2 = malloc(size);
+        buf2 = calloc(size, sizeof(char));
         if (!buf2) {
             free(buf1);
             free(s);

@@ -31,15 +31,11 @@
 
 struct Client* Client_New()
 {
-    struct Client* c = malloc(sizeof(struct Client));
+    struct Client* c = calloc(1, sizeof(struct Client));
     if (!c) { return NULL; }
 
     c->cSock = -1;
-    memset(&c->cAddr, 0, sizeof(c->cAddr));
     c->rSock = -1;
-    memset(&c->rAddr, 0, sizeof(c->rAddr));
-    c->cfg = NULL;
-    c->srv = NULL;
 
     return c;
 }
