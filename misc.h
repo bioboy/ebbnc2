@@ -37,6 +37,8 @@ int Daemonise();
 void SetReadTimeout(int sock, time_t timeout);
 void SetWriteTimeout(int sock, time_t timeout);
 bool StrToInt(const char* s, int* i);
+char* PromptInput(const char* prompt, const char* defaultValue);
+void Hline();
 
 #define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof z; })
 

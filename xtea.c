@@ -51,15 +51,10 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
                        unsigned char* dst, size_t dstSize,
                        const unsigned char* key)
 {
-    unsigned char last[XTEA_BLOCK_SIZE];
-    unsigned char pad;
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
-    unsigned int padding;
     
-    if (dstSize < srcLen) {
-        return -1;
-    }
+    if (dstSize < srcLen) { return -1; }
 
     while (remaining >= XTEA_BLOCK_SIZE) {
         XTeaEncrypt(src, dst, key);
@@ -68,6 +63,8 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
         dst += XTEA_BLOCK_SIZE;
     }
     
+    unsigned char last[XTEA_BLOCK_SIZE];
+    unsigned int padding;
     if (remaining > 0) {
         padding = XTEA_BLOCK_SIZE - remaining;
         memcpy(last, src, remaining);
@@ -79,7 +76,7 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
         return -1;
     }
 
-    pad = '0' + padding;
+    unsigned char pad = '0' + padding;
     dstLen += padding;
     memset(last + remaining, pad, padding);
     XTeaEncrypt(last, dst, key);
@@ -92,22 +89,18 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
                        const unsigned char ivec[XTEA_BLOCK_SIZE],
                        const unsigned char key[XTEA_KEY_SIZE])
 {
-    unsigned char block[XTEA_BLOCK_SIZE];
-    unsigned char pad;
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
-    unsigned int padding;
-    unsigned int i;
-    unsigned char iv[XTEA_BLOCK_SIZE];
     
-    if (dstSize < srcLen) {
-        return -1;
-    }
+    if (dstSize < srcLen) { return -1; }
 
+    unsigned char block[XTEA_BLOCK_SIZE];
+    unsigned char iv[XTEA_BLOCK_SIZE];
     memcpy(iv, ivec, sizeof(iv));
     while (remaining >= XTEA_BLOCK_SIZE) {
     
         memcpy(block, src, XTEA_BLOCK_SIZE);
+        unsigned int i;
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
             block[i] = (unsigned char) block[i] ^ iv[i];
         }
@@ -119,6 +112,7 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
         dst += XTEA_BLOCK_SIZE;
     }
     
+    unsigned int padding;
     if (remaining > 0) {
         padding = XTEA_BLOCK_SIZE - remaining;
         memcpy(block, src, remaining);
@@ -130,14 +124,15 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
         return -1;
     }
 
-    pad = '0' + padding;
-    dstLen += padding;
+    unsigned char pad = '0' + padding;
     memset(block + remaining, pad, padding);
+    dstLen += padding;
+    unsigned int i;
     for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
         block[i] = (unsigned char) block[i] ^ iv[i];
     }
     XTeaEncrypt(block, dst, key);
-    
+
     return dstLen;
 }
 
@@ -169,7 +164,6 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
-    int padding = 0;
     
     if (dstSize < srcLen || srcLen % XTEA_BLOCK_SIZE != 0) {
         return -1;
@@ -182,7 +176,7 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
         dst += XTEA_BLOCK_SIZE;
     }
     
-    padding = *(dst - 1) - '0';
+    int padding = *(dst - 1) - '0';
     if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
         return -1;
     }
@@ -197,20 +191,20 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
-    int padding = 0;
-    unsigned char temp[XTEA_BLOCK_SIZE];
-    unsigned int i;
-    unsigned char iv[XTEA_BLOCK_SIZE];
     
     if (dstSize < srcLen || srcLen % XTEA_BLOCK_SIZE != 0) {
         return -1;
     }
 
+    unsigned char temp[XTEA_BLOCK_SIZE];
+    unsigned char iv[XTEA_BLOCK_SIZE];
     memcpy(iv, ivec, sizeof(ivec));
     while (remaining > 0) {
     
         memcpy(temp, src, XTEA_BLOCK_SIZE);
         XTeaDecrypt(src, dst, key);
+        
+        unsigned int i;
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
             dst[i] = (unsigned char) dst[i] ^ iv[i];
         }
@@ -221,21 +215,20 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
         memcpy(iv, temp, XTEA_BLOCK_SIZE);
     }
     
-    padding = *(dst - 1) - '0';
+    int padding = *(dst - 1) - '0';
     if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
         return -1;
     }
-
+    
     return dstLen - padding;
 }
 
 int XTeaGenerateIVec(unsigned char ivec[XTEA_BLOCK_SIZE])
 {
-    ssize_t ret;
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) return -1;
     
-    ret = read(fd, ivec, sizeof(ivec));
+    ssize_t ret = read(fd, ivec, sizeof(ivec));
     close(fd);
     
     return ret == sizeof(ivec) ? 0 : -1;

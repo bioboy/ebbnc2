@@ -1,5 +1,10 @@
 ebBMC Changelog - ebftpd team
 
+0.3b:
+* Fixed some problems with pid file creation.
+* Optional support for embedded config encrypted using xtea cipher.
+* Fixed some dodgy integer parsing from config.
+
 0.2b:
 * Fixed memory leak in Client_Idnt.
 

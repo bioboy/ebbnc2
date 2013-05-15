@@ -20,8 +20,12 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <ctype.h>
 #include "config.h"
 #include "misc.h"
+#include "conf.h"
+#include "hex.h"
+#include "xtea.h"
 
 struct Config* Config_New()
 {
@@ -182,8 +186,8 @@ struct Config* Config_LoadBuffer(const char* buffer)
   return c;
   
 strduperror:
+  fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
   free(line);
-  perror("strdup");
   Config_Free(&c);
   return NULL;
 }
@@ -224,6 +228,71 @@ struct Config* Config_LoadFile(const char* path)
   return c;
 }
 
+#ifdef CONF_EMBEDDED
+
+char* Config_DecryptEmbedded(const char* key)
+{
+  size_t confLen = strlen(CONF_EMBEDDED);
+  size_t cipherSize = confLen / 2 + 1;
+  char* cipher = malloc(cipherSize);
+  if (!cipher) { return NULL; }
+  
+  ssize_t cipherLen = HexDecode(CONF_EMBEDDED, confLen, cipher, cipherSize);
+  if (cipherLen < XTEA_BLOCK_SIZE) {
+    free(cipher);
+    return NULL;
+  }
+  
+  size_t plainSize = cipherLen;
+  char* plain = malloc(plainSize);
+  if (!plain) {
+    free(cipher);
+    return NULL;
+  }
+  
+  unsigned char ivec[XTEA_BLOCK_SIZE];
+  memcpy(ivec, cipher, XTEA_BLOCK_SIZE);
+  
+  ssize_t plainLen = XTeaDecryptCBC((unsigned char*)cipher + XTEA_BLOCK_SIZE, cipherLen - XTEA_BLOCK_SIZE, 
+                                    (unsigned char*)plain, plainSize, 
+                                    (unsigned char*)ivec, (unsigned char*)key);
+  if (plainLen < 0) {
+    free(cipher);
+    free(plain);
+    return NULL;
+  }
+  
+  free(cipher);
+  plain[plainLen] = '\0';
+
+  // check if decryption was successful
+  // should contain no control chars
+  char* p;
+  for (p = plain; *p; p++) {
+    if (iscntrl(*p) && !isspace(*p)) {
+      free(plain);
+      return NULL;
+    }
+  }
+  
+  return plain;
+}
+
+struct Config* Config_LoadEmbedded(const char* key)
+{
+  char *buffer = Config_DecryptEmbedded(key);
+  if (!buffer) {
+    fprintf(stderr, "Error while decrypting embedded conf!\n");
+    return NULL;
+  }
+    
+  struct Config* cfg = Config_LoadBuffer(buffer);
+  free(buffer);
+  return cfg;
+}
+
+#endif
+
 char* Config_SaveBuffer(struct Config* c)
 {
   char* buffer = Scatprintf(NULL, "listenip=%s\n", c->listenIP);
@@ -247,7 +316,7 @@ char* Config_SaveBuffer(struct Config* c)
   buffer = Scatprintf(buffer, "idletimeout=%i\n", c->idleTimeout);
   if (!buffer) return NULL;
 
-  buffer = Scatprintf(buffer, "writeimeout=%i\n", c->writeTimeout);
+  buffer = Scatprintf(buffer, "writetimeout=%i\n", c->writeTimeout);
   if (!buffer) return NULL;
 
   buffer = Scatprintf(buffer, "dnslookup=%s\n", c->dnsLookup ? "true" : "false");

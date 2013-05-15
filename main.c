@@ -27,9 +27,7 @@
 #include "server.h"
 #include "misc.h"
 #include "conf.h"
-
-const char* program = "ebBNC";
-const char* version = "0.2b";
+#include "info.h"
 
 bool InitialiseSignals()
 {
@@ -46,29 +44,43 @@ bool InitialiseSignals()
   return true;
 }
 
-void Hline()
-{
-  printf("---------------------------------------- --- -> >\n");
-}
-
 int main(int argc, char** argv)
 {
+#ifndef CONF_EMBEDDED
   if (argc != 2) {
-    fprintf(stderr, "usage: %s <config file>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <config file>\n", argv[0]);
     return 1;
   }
+#else
+  if (argc != 1) {
+    fprintf(stderr, "Usage: %s\n", argv[0]);
+    fprintf(stderr, "Built with an embedded conf.\n");
+    return 1;
+  }
+  
+  char* key = PromptInput("Password", NULL);
+  if (*key == '\0') {
+    fprintf(stderr, "Password is required to load embedded conf.\n");
+    return 1;
+  }
+#endif
 
   Hline();
-  printf("%s %s by ebftpd team\n", program, version);
+  printf("%s %s by %s\n", EBBNC_PROGRAM, EBBNC_VERSION, EBBNC_AUTHOR);
   Hline();
   atexit(Hline);
   
-  printf("Loading config file ..\n");
-  struct Config* cfg = Config_LoadFile(argv[1]);
-  if (!cfg) return 1;
-  
   printf("Initialising signals ..\n");
   InitialiseSignals();
+  
+  printf("Loading config file ..\n");
+    
+#ifndef CONF_EMBEDDED
+  struct Config* cfg = Config_LoadFile(argv[1]);
+#else
+  struct Config* cfg = Config_LoadEmbedded(key);
+#endif
+  if (!cfg) return 1;
   
   if (cfg->pidFile)
   {

@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 #include "misc.h"
 
 bool ValidIP(const char* ip)
@@ -217,4 +218,40 @@ bool StrToInt(const char* s, int* i)
   long value = strtol(s, &p, 10);
   *i = (int) value;
   return *p == '\0';
+}
+
+char* PromptInput(const char* prompt, const char* defaultValue)
+{
+  static char buffer[BUFSIZ];
+  
+  if (defaultValue != NULL) {
+    printf("%s [%s]: ", prompt, defaultValue);
+  }
+  else {
+    printf("%s: ", prompt);
+  }
+  
+  if (!fgets(buffer, sizeof(buffer), stdin)) {
+    *buffer = '\0';
+    return buffer;
+  }
+
+  char* p = buffer + strlen(buffer) - 1;
+  while (*p == '\n' || *p == '\r') { *p-- = '\0'; }
+  
+  if (*buffer == '\0' && defaultValue != NULL) {
+    size_t len = strlen(defaultValue);
+    if (len > sizeof(buffer) - 1) {
+      len = sizeof(buffer) - 1;
+    }
+    strncpy(buffer, defaultValue, len);
+    buffer[len] = '\0';
+  }
+  
+  return buffer;
+}
+
+void Hline()
+{
+  printf("------------------------------------------------------- --- -> >\n");
 }

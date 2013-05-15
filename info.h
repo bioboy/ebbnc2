@@ -15,31 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef EBBNC_CONFIG_H
-#define EBBNC_CONFIG_H
+#ifndef EBBNC_INFO_H
+#define EBBNC_INFO_H
 
-#include <stdbool.h>
-
-struct Config
-{
-  char* listenIP;
-  int listenPort;
-  char* remoteIP;
-  int remotePort;
-  bool idnt;
-  int identTimeout;
-  int idleTimeout;
-  int writeTimeout;
-  bool dnsLookup;
-  char* pidFile;
-  char* welcomeMsg;
-};
-
-struct Config* Config_New();
-struct Config* Config_LoadBuffer(const char* buffer);
-struct Config* Config_LoadFile(const char* path);
-struct Config* Config_LoadEmbedded(const char* key);
-char* Config_SaveBuffer(struct Config* c);
-void Config_Free(struct Config** cp);
+#define EBBNC_PROGRAM   "ebBNC"
+#define EBBNC_VERSION   "0.3b"
+#define EBBNC_AUTHOR    "ebftpd team"
 
 #endif
+

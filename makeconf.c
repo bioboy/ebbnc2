@@ -25,44 +25,14 @@
 #include "misc.h"
 #include "xtea.h"
 #include "hex.h"
+#include "info.h"
 
 #define CONF_HEADER "conf.h"
-
-char* Input(const char* prompt, const char* defaultValue)
-{
-  static char buffer[BUFSIZ];
-  
-  if (defaultValue != NULL) {
-    printf("%s [%s]: ", prompt, defaultValue);
-  }
-  else {
-    printf("%s: ", prompt);
-  }
-  
-  if (!fgets(buffer, sizeof(buffer), stdin)) {
-    *buffer = '\0';
-    return buffer;
-  }
-
-  char* p = buffer + strlen(buffer) - 1;
-  while (*p == '\n' || *p == '\r') { *p-- = '\0'; }
-  
-  if (*buffer == '\0' && defaultValue != NULL) {
-    size_t len = strlen(defaultValue);
-    if (len > sizeof(buffer) - 1) {
-      len = sizeof(buffer) - 1;
-    }
-    strncpy(buffer, defaultValue, len);
-    buffer[len] = '\0';
-  }
-  
-  return buffer;
-}
 
 void AbortHandler(int signo)
 {
   static const char* abortMessage = "\nConfig creation aborted!\n";
-  ssize_t ret = write(fileno(stdout), abortMessage, strlen(abortMessage)); (void) ret;
+  IGNORE_RESULT(write(fileno(stdout), abortMessage, strlen(abortMessage)));
   _exit(1);
   (void) signo;
 }
@@ -70,23 +40,28 @@ void AbortHandler(int signo)
 
 char* Encrypt(const char* plain, const char* key)
 {
-  unsigned char ivec[XTEA_BLOCK_SIZE];
-  if (XTeaGenerateIVec(ivec) < 0) { return NULL; }
-
   size_t plainLen = strlen(plain);
-  size_t cipherSize = plainLen + XTEA_BLOCK_SIZE;
+  size_t cipherSize = plainLen + XTEA_BLOCK_SIZE * 2;
   char* cipher = malloc(cipherSize);
   if (!cipher) { return NULL; }
+
+  if (XTeaGenerateIVec((unsigned char*) cipher) < 0) { return NULL; }
+
+  memcpy(cipher, "12345678", XTEA_BLOCK_SIZE);
+  
+  // encrypt plain conf
   
   ssize_t len = XTeaEncryptCBC((unsigned char*) plain, strlen(plain), 
-                               (unsigned char*) cipher, cipherSize, 
-                               ivec, (unsigned char*)key);
-                               
+                               (unsigned char*) cipher + XTEA_BLOCK_SIZE, cipherSize - XTEA_BLOCK_SIZE, 
+                               (unsigned char*) cipher, (unsigned char*) key);
   if (len < 0) {
     free(cipher);
     return NULL;
   }
   
+  len += XTEA_BLOCK_SIZE;
+  
+  // hex encode cipher data
   size_t encodedSize = len * 2 + 1;
   char* encoded = malloc(encodedSize);
   if (!encoded) {
@@ -144,6 +119,11 @@ int main(int argc, char** argv)
   };
 
   signal(SIGINT, AbortHandler);
+
+  Hline();
+  printf("%s conf editor %s by %s\n", EBBNC_PROGRAM, EBBNC_VERSION, EBBNC_AUTHOR);
+  Hline();
+  atexit(Hline);
   
   struct Config* c = Config_New();
   if (!c) {
@@ -160,7 +140,7 @@ int main(int argc, char** argv)
     switch (stage) {
       case StageListenIP :
       {
-        char* value = Input("Listen ip", "0.0.0.0");
+        char* value = PromptInput("Listen ip", "0.0.0.0");
         if (ValidIP(value)) {
           c->listenIP = strdup(value);
           if (!c->listenIP) { error = ErrorStrdup; }
@@ -172,7 +152,7 @@ int main(int argc, char** argv)
       }
       case StageListenPort :
       {
-        char* value = Input("Listen port", NULL);
+        char* value = PromptInput("Listen port", NULL);
         if (*value != '\0') {
           if (StrToInt(value, &c->listenPort) != 1 || !ValidPort(c->listenPort)) {
             error = ErrorValue;
@@ -185,7 +165,7 @@ int main(int argc, char** argv)
       }
       case StageRemoteIP :
       {
-        char* value = Input("Remote ip", NULL);
+        char* value = PromptInput("Remote ip", NULL);
         if (*value != '\0') {
           if (ValidIP(value)) {
             c->remoteIP = strdup(value);
@@ -204,7 +184,7 @@ int main(int argc, char** argv)
       }
       case StageRemotePort :
       {
-        char* value = Input("Remote port", NULL);
+        char* value = PromptInput("Remote port", NULL);
         if (*value != '\0') {
           if (StrToInt(value, &c->remotePort) != 1 || !ValidPort(c->remotePort)) {
             error = ErrorValue;
@@ -217,7 +197,7 @@ int main(int argc, char** argv)
       }
       case StageIdnt :
       {
-        char* value = Input("Send idnt", "true");
+        char* value = PromptInput("Send idnt", "true");
         if (!strcasecmp(value, "true")) {
           c->idnt = true;
         }
@@ -233,7 +213,7 @@ int main(int argc, char** argv)
       {
         if (!c->idnt) { break; }
         
-        char* value = Input("Ident timeout", "10");
+        char* value = PromptInput("Ident timeout", "10");
         if (*value != '\0') {
           if (StrToInt(value, &c->identTimeout) != 1 || c->identTimeout < 0) {
             error = ErrorValue;
@@ -248,7 +228,7 @@ int main(int argc, char** argv)
       {
         if (!c->idnt) { break; }
         
-        char* value = Input("Idle timeout", "0");
+        char* value = PromptInput("Idle timeout", "0");
         if (*value != '\0') {
           if (StrToInt(value, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
             error = ErrorValue;
@@ -261,7 +241,7 @@ int main(int argc, char** argv)
       }
       case StageWriteTimeout :
       {
-        char* value = Input("Write timeout", "30");
+        char* value = PromptInput("Write timeout", "30");
         if (*value != '\0') {
           if (StrToInt(value, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
             error = ErrorValue;
@@ -274,7 +254,7 @@ int main(int argc, char** argv)
       }
       case StageDnsLookup :
       {
-        char* value = Input("Dns lookup", "true");
+        char* value = PromptInput("Dns lookup", "true");
         if (!strcasecmp(value, "true")) {
           c->dnsLookup = true;
         }
@@ -288,7 +268,7 @@ int main(int argc, char** argv)
       }
       case StagePidFile :
       {
-        char* value = Input("Pid file path", "none");
+        char* value = PromptInput("Pid file path", "none");
         if (strcmp(value, "none")) {
           c->pidFile = strdup(value);
           if (!c->pidFile) { error = ErrorStrdup; }
@@ -297,7 +277,7 @@ int main(int argc, char** argv)
       }
       case StageWelcomeMsg :
       {
-        char* value = Input("Welcome message", "none");
+        char* value = PromptInput("Welcome message", "none");
         if (strcmp(value, "none")) {
           c->welcomeMsg = strdup(value);
           if (!c->welcomeMsg) { error = ErrorStrdup; }
@@ -306,7 +286,7 @@ int main(int argc, char** argv)
       }
       case StagePassword :
       {
-        char* value = Input("Password", NULL);
+        char* value = PromptInput("Password", NULL);
         if (*value != '\0') {
           strncpy(key, value, sizeof(key) - 1);
         }
@@ -353,6 +333,8 @@ int main(int argc, char** argv)
     return 1;
   }
   
+  Hline();
+  
   printf("Serializing config to buffer ..\n");
   
   char* plain = Config_SaveBuffer(c);
@@ -385,7 +367,9 @@ int main(int argc, char** argv)
   free(plain);
 
   printf("Successfully saved encrypted config!\n");
-    
+  Hline();
+  printf("Run 'make' to create an %s binary with the config embedded.\n", EBBNC_PROGRAM);
+  
   return 0;
   
   (void) argc;
