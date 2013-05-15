@@ -119,12 +119,12 @@ int AlreadyRunning(const char* pidFile)
   return 1;
 }
 
-bool CreatePIDFile(const char* pidFile)
+bool CreatePIDFile(const char* pidFile, pid_t pid)
 {
   FILE* fp = fopen(pidFile, "w");
   if (!fp) return false;
   
-  int ret = fprintf(fp, "%i\n", getpid());
+  int ret = fprintf(fp, "%i\n", pid);
   fclose(fp);
   
   return ret > 0;

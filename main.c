@@ -22,6 +22,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 #include "config.h"
 #include "server.h"
 #include "misc.h"
@@ -73,13 +74,13 @@ int main(int argc, char** argv)
     printf("Checking if bouncer already running ..\n");
     int ret = AlreadyRunning(cfg->pidFile);
     if (ret < 0) {
-      perror("AlreadyRunning");
+      fprintf(stderr, "Unable to check if already running: %s\n", strerror(errno));
       Config_Free(&cfg);
       return 1;
     }
     
     if (ret != 0) {
-      fprintf(stderr, "Bouncer already running.\n");
+      fprintf(stderr, "Bouncer already running!\n");
       Config_Free(&cfg);
       return 1;
     }
@@ -104,19 +105,18 @@ int main(int argc, char** argv)
   
   if (pid > 0) {
     printf("Bouncer running as PID #%i\n", pid);
+    if (cfg->pidFile) {
+      printf("Creating PID file at %s ..\n", cfg->pidFile);
+      if (!CreatePIDFile(cfg->pidFile, pid)) {
+        // this goes to /dev/null at the moment
+        // this error is not fatal
+        fprintf(stderr, "Failed to create PID file. This is only a warning.\n"); 
+      }
+    }
     Hline();
     _exit(0);
   }
   
-  if (cfg->pidFile) {
-    printf("Creating PID file at %s ..\n", cfg->pidFile);
-    if (!CreatePIDFile(cfg->pidFile)) {
-      // this goes to /dev/null at the moment
-      // this error is not fatal
-      fprintf(stderr, "Failed to create PID file. This is only a warning.\n"); 
-    }
-  }
-
   printf("Waiting for connections ..\n");
   Server_Loop(srv);
   
