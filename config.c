@@ -23,8 +23,6 @@
 #include "config.h"
 #include "misc.h"
 
-#include <assert.h>
-
 struct Config* Config_New()
 {
   struct Config* c = malloc(sizeof(struct Config));
@@ -40,6 +38,7 @@ struct Config* Config_New()
   c->writeTimeout = 30;
   c->dnsLookup = true;
   c->pidFile = NULL;
+  c->welcomeMsg = NULL;
   
   return c;
 }
@@ -113,14 +112,14 @@ struct Config* Config_LoadBuffer(const char* buffer)
       if (!c->listenIP) goto strduperror;
     }
     else if (!strncasecmp(line, "listenport=", 11) && len > 11) {
-      if (sscanf(line + 11, "%i", &c->listenPort) != 1 || c->listenPort < 0) error = true;
+      if (StrToInt(line + 11, &c->listenPort) != 1 || c->listenPort < 0) error = true;
     }
     else if (!strncasecmp(line, "remoteip=", 9) && len > 9) {
       c->remoteIP = strdup(line + 9);
       if (!c->remoteIP) goto strduperror;
     }
     else if (!strncasecmp(line, "remoteport=", 11) && len > 11) {
-      if (sscanf(line + 11, "%i", &c->remotePort) != 1 || c->remotePort < 0) error = true;
+      if (StrToInt(line + 11, &c->remotePort) != 1 || c->remotePort < 0) error = true;
     }
     else if (!strncasecmp(line, "idnt=", 5)) {
       char* value = line + 5;
@@ -129,17 +128,17 @@ struct Config* Config_LoadBuffer(const char* buffer)
       else error = true;
     }
     else if (!strncasecmp(line, "identtimeout=", 13) && len > 13) {
-      if (sscanf(line + 13, "%i", &c->identTimeout) != 1 || c->identTimeout < 0) {
+      if (StrToInt(line + 13, &c->identTimeout) != 1 || c->identTimeout < 0) {
         error = true;
       }
     }
     else if (!strncasecmp(line, "idletimeout=", 12) && len > 12) {
-      if (sscanf(line + 12, "%i", &c->idleTimeout) != 1 || c->idleTimeout < 0) {
+      if (StrToInt(line + 12, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
         error = true;
       }
     }
     else if (!strncasecmp(line, "writetimeout=", 13) && len > 13) {
-      if (sscanf(line + 13, "%i", &c->writeTimeout) != 1 || c->writeTimeout < 0) {
+      if (StrToInt(line + 13, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
         error = true;
       }
     }
@@ -201,8 +200,6 @@ struct Config* Config_LoadFile(const char* path)
   long size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
-  assert(!ferror(fp));
-  
   char* buffer = malloc(size + 1);
   if (!buffer) {
     fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
@@ -225,4 +222,46 @@ struct Config* Config_LoadFile(const char* path)
   free(buffer);
   
   return c;
+}
+
+char* Config_SaveBuffer(struct Config* c)
+{
+  char* buffer = Scatprintf(NULL, "listenip=%s\n", c->listenIP);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "listenport=%i\n", c->listenPort);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "remoteip=%s\n", c->remoteIP);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "remoteport=%i\n", c->remotePort);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "idnt=%s\n", c->idnt ? "true" : "false");
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "identtimeout=%i\n", c->identTimeout);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "idletimeout=%i\n", c->idleTimeout);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "writeimeout=%i\n", c->writeTimeout);
+  if (!buffer) return NULL;
+
+  buffer = Scatprintf(buffer, "dnslookup=%s\n", c->dnsLookup ? "true" : "false");
+  if (!buffer) return NULL;
+
+  if (c->pidFile) {
+    buffer = Scatprintf(buffer, "pidfile=%s\n", c->pidFile);
+    if (!buffer) return NULL;
+  }
+
+  if (c->welcomeMsg) {
+    buffer = Scatprintf(buffer, "welcomemsg=%s\n", c->welcomeMsg);
+    if (!buffer) return NULL;
+  }
+  
+  return buffer;
 }

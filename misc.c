@@ -24,6 +24,17 @@
 #include <signal.h>
 #include "misc.h"
 
+bool ValidIP(const char* ip)
+{
+  struct sockaddr_storage addr;
+  return IPPortToSockaddr(ip, 0, &addr);
+}
+
+bool ValidPort(int port)
+{
+  return port >= 0 && port <= 65535;
+}
+
 bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr)
 {
   memset(addr, 0, sizeof(addr));
@@ -95,6 +106,45 @@ char* Sprintf(const char* fmt, ...)
   return buf;
 }
 
+char* Scatprintf(char* s, const char* fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  int len = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+  
+  char* buf1 = malloc(len + 1);
+  if (!buf1) {
+    va_end(args);
+    free(s);
+    return NULL;
+  }
+  
+  va_start(args, fmt);
+  len = vsnprintf(buf1, len + 1, fmt, args);
+  va_end(args);
+  
+  char* buf2 = buf1;
+  if (s != NULL) {
+    size_t size = strlen(s) + len + 1;
+    buf2 = malloc(size);
+    if (!buf2) {
+      free(buf1);
+      free(s);
+      return NULL;
+    }
+    
+    *buf2 = '\0';
+    
+    strncat(buf2, s, size);
+    strncat(buf2, buf1, size);
+    free(buf1);
+  }
+  
+  free(s);  
+  return buf2;
+}
+
 int AlreadyRunning(const char* pidFile)
 {
   FILE* fp = fopen(pidFile, "r");
@@ -159,4 +209,12 @@ void SetReadTimeout(int sock, time_t timeout)
 void SetWriteTimeout(int sock, time_t timeout)
 {
   SetTimeout(sock, timeout, SO_SNDTIMEO);
+}
+
+bool StrToInt(const char* s, int* i)
+{
+  char* p;
+  long value = strtol(s, &p, 10);
+  *i = (int) value;
+  return *p == '\0';
 }

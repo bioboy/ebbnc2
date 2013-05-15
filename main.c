@@ -26,6 +26,7 @@
 #include "config.h"
 #include "server.h"
 #include "misc.h"
+#include "conf.h"
 
 const char* program = "ebBNC";
 const char* version = "0.2b";

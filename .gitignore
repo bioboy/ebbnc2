@@ -1,5 +1,9 @@
 *.o
+*.d
 ebbnc
 *.pid
 core
 *.conf
+conf.h
+makeconf
+

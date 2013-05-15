@@ -23,16 +23,20 @@
 #include <time.h>
 #include <sys/types.h>
 
+bool ValidIP(const char* ip);
+bool ValidPort(int port);
 bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr);
 int PortFromSockaddr(const struct sockaddr_storage* addr);
 bool IPFromSockaddr(const struct sockaddr_storage* addr, char* ip);
 void StripCRLF(char* buf);
 char* Sprintf(const char* fmt, ...);
+char* Scatprintf(char* s, const char* fmt, ...);
 int AlreadyRunning(const char* pidFile);
 bool CreatePIDFile(const char* pidFile, pid_t pid);
 int Daemonise();
 void SetReadTimeout(int sock, time_t timeout);
 void SetWriteTimeout(int sock, time_t timeout);
+bool StrToInt(const char* s, int* i);
 
 #define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof z; })
 
