@@ -35,7 +35,8 @@ struct Config
   char* welcomeMsg;
 };
 
-struct Config* Config_Load(const char* path);
+struct Config* Config_LoadBuffer(const char* buffer);
+struct Config* Config_LoadFile(const char* path);
 void Config_Free(struct Config** cp);
 
 #endif

@@ -62,7 +62,7 @@ int main(int argc, char** argv)
   atexit(Hline);
   
   printf("Loading config file ..\n");
-  struct Config* cfg = Config_Load(argv[1]);
+  struct Config* cfg = Config_LoadFile(argv[1]);
   if (!cfg) return 1;
   
   printf("Initialising signals ..\n");
