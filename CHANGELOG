@@ -2,6 +2,7 @@ ebBMC Changelog - ebftpd team
 
 0.4b:
 * Fixed some portability problems on FreeBSD.
+* Fixed problems with strict-aliasing on some platforms.
 
 0.3b:
 * Fixed some problems with pid file creation.
