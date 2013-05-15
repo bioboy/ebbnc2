@@ -26,30 +26,30 @@
 
 #define IDENT_PORT      113
 
-bool IdentLookup(const struct sockaddr_storage* localAddr,
-                 const struct sockaddr_storage* peerAddr,
+bool IdentLookup(const struct sockaddr_any* localAddr,
+                 const struct sockaddr_any* peerAddr,
                  time_t timeout, char* user)
 {
-    struct sockaddr_storage addr;
+    struct sockaddr_any addr;
     memcpy(&addr, peerAddr, sizeof(addr));
-    switch (addr.ss_family) {
+    switch (addr.san_family) {
         case AF_INET :
-            ((struct sockaddr_in*)&addr)->sin_port = htons(IDENT_PORT);
+            addr.s4.sin_port = htons(IDENT_PORT);
             break;
         case AF_INET6 :
-            ((struct sockaddr_in6*)&addr)->sin6_port = htons(IDENT_PORT);
+            addr.s6.sin6_port = htons(IDENT_PORT);
             break;
         default :
             return false;
     }
 
-    int sock = socket(addr.ss_family, SOCK_STREAM, 0);
+    int sock = socket(addr.san_family, SOCK_STREAM, 0);
     if (sock < 0) { return false; }
 
     SetReadTimeout(sock, timeout);
     SetWriteTimeout(sock, timeout);
 
-    if (connect(sock, (struct sockaddr*)&addr, SockaddrLen(&addr)) < 0) { return false; }
+    if (connect(sock, &addr.sa, SockaddrLen(&addr)) < 0) { return false; }
 
     FILE* fp = fdopen(sock, "r+");
     if (!fp) {

@@ -22,20 +22,21 @@
 #include <pthread.h>
 #include "config.h"
 #include "server.h"
+#include "misc.h"
 
 #define CLIENT_STACKSIZE 1001024
 
 struct Client {
     pthread_t threadId;
     int cSock;
-    struct sockaddr_storage cAddr;
+    struct sockaddr_any cAddr;
     int rSock;
-    struct sockaddr_storage rAddr;
+    struct sockaddr_any rAddr;
     struct Config* cfg;
     struct Server* srv;
 };
 
 void Client_Launch(struct Server* srv, int sock,
-                   const struct sockaddr_storage* addr);
+                   const struct sockaddr_any* addr);
 
 #endif

@@ -21,11 +21,12 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <stdbool.h>
+#include "misc.h"
 
 #define IDENT_LEN 256
 
-bool IdentLookup(const struct sockaddr_storage* localAddr,
-                 const struct sockaddr_storage* peerAddr,
+bool IdentLookup(const struct sockaddr_any* localAddr,
+                 const struct sockaddr_any* peerAddr,
                  time_t timeout, char* user);
 
 #endif

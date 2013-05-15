@@ -22,12 +22,25 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <sys/types.h>
+#include <netinet/in.h>
+
+struct sockaddr_any
+{
+  union
+  {
+    sa_family_t san_family;
+    struct sockaddr_storage ss;
+    struct sockaddr_in s4;
+    struct sockaddr_in6 s6;
+    struct sockaddr sa;
+  };
+};
 
 bool ValidIP(const char* ip);
 bool ValidPort(int port);
-bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr);
-int PortFromSockaddr(const struct sockaddr_storage* addr);
-bool IPFromSockaddr(const struct sockaddr_storage* addr, char* ip);
+bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr);
+int PortFromSockaddr(const struct sockaddr_any* addr);
+bool IPFromSockaddr(const struct sockaddr_any* addr, char* ip);
 void StripCRLF(char* buf);
 char* Sprintf(const char* fmt, ...);
 char* Scatprintf(char* s, const char* fmt, ...);
@@ -39,7 +52,7 @@ void SetWriteTimeout(int sock, time_t timeout);
 bool StrToInt(const char* s, int* i);
 char* PromptInput(const char* prompt, const char* defaultValue);
 void Hline();
-socklen_t SockaddrLen(const struct sockaddr_storage* addr);
+socklen_t SockaddrLen(const struct sockaddr_any* addr);
 
 #define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof(z); })
 

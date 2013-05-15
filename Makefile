@@ -1,5 +1,5 @@
 
-CFLAGS := -O3 -Wall -Wextra -g -ggdb
+CFLAGS := -O3 -Wall -Wextra -g -ggdb -Wfatal-errors
 LIBS := -lpthread
 OBJS = main.o server.o client.o config.o misc.o ident.o xtea.o hex.o
 

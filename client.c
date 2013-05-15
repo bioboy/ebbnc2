@@ -91,9 +91,9 @@ bool Client_Idnt(struct Client* c)
     char user[IDENT_LEN];
 
     {
-        struct sockaddr_storage localAddr;
+        struct sockaddr_any localAddr;
         socklen_t slen = sizeof(localAddr);
-        if (getsockname(c->cSock, (struct sockaddr*)&localAddr, &slen) < 0) {
+        if (getsockname(c->cSock, &localAddr.sa, &slen) < 0) {
             perror("getsockname");
             return false;
         }
@@ -108,7 +108,7 @@ bool Client_Idnt(struct Client* c)
 
     char hostname[NI_MAXHOST];
     if (!c->cfg->dnsLookup ||
-        getnameinfo((struct sockaddr*)&c->cAddr, sizeof(c->cAddr),
+        getnameinfo(&c->cAddr.sa, sizeof(c->cAddr), 
                     hostname, sizeof(hostname), NULL, 0, 0) != 0) {
 
         strncpy(hostname, ip, sizeof(ip));
@@ -133,7 +133,7 @@ bool Client_Connect(struct Client* c)
         return false;
     }
 
-    c->rSock = socket(c->rAddr.ss_family, SOCK_STREAM, 0);
+    c->rSock = socket(c->rAddr.san_family, SOCK_STREAM, 0);
     if (c->rSock < 0) {
         Client_ErrnoReply(c, "socket", errno);
         return false;
@@ -146,7 +146,7 @@ bool Client_Connect(struct Client* c)
         setsockopt(c->rSock, IPPROTO_TCP, TCP_NODELAY, (char*)&optval, sizeof(optval));
     }
 
-    if (connect(c->rSock, (struct sockaddr*)&c->rAddr, SockaddrLen(&c->rAddr)) < 0) {
+    if (connect(c->rSock, &c->rAddr.sa, SockaddrLen(&c->rAddr)) < 0) {
         Client_ErrnoReply(c, "connect", errno);
         return false;
     }
@@ -261,7 +261,7 @@ void* Client_ThreadMain(void* cv)
 }
 
 void Client_Launch(struct Server* srv, int sock,
-                   const struct sockaddr_storage* addr)
+                   const struct sockaddr_any* addr)
 {
     struct Client* c = Client_New();
     if (!c) {

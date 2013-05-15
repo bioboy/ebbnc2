@@ -23,13 +23,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include "misc.h"
 
 bool ValidIP(const char* ip)
 {
-    struct sockaddr_storage addr;
+    struct sockaddr_any addr;
     return IPPortToSockaddr(ip, 0, &addr);
 }
 
@@ -38,18 +37,18 @@ bool ValidPort(int port)
     return port >= 0 && port <= 65535;
 }
 
-bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr)
+bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
 {
     memset(addr, 0, sizeof(addr));
-    if (inet_pton(AF_INET, ip, &((struct sockaddr_in*)addr)->sin_addr) == 1) {
-        addr->ss_family = AF_INET;
-        ((struct sockaddr_in*)addr)->sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &addr->s4.sin_addr) == 1) {
+        addr->san_family = AF_INET;
+        addr->s4.sin_port = htons(port);
         return true;
     }
 
-    if (inet_pton(AF_INET6, ip, &((struct sockaddr_in6*)addr)->sin6_addr) == 1) {
-        addr->ss_family = AF_INET6;
-        ((struct sockaddr_in6*)addr)->sin6_port = htons(port);
+    if (inet_pton(AF_INET6, ip, &addr->s6.sin6_addr) == 1) {
+        addr->san_family = AF_INET6;
+        addr->s6.sin6_port = htons(port);
         return true;
     }
 
@@ -57,27 +56,27 @@ bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_storage* addr)
     return false;
 }
 
-int PortFromSockaddr(const struct sockaddr_storage* addr)
+int PortFromSockaddr(const struct sockaddr_any* addr)
 {
-    switch (addr->ss_family) {
+    switch (addr->san_family) {
         case AF_INET :
-            return ntohs(((struct sockaddr_in*)addr)->sin_port);
+            return ntohs(addr->s4.sin_port);
         case AF_INET6 :
-            return ntohs(((struct sockaddr_in6*)addr)->sin6_port);
+            return ntohs(addr->s6.sin6_port);
         default :
             errno = EAFNOSUPPORT;
             return -1;
     }
 }
 
-bool IPFromSockaddr(const struct sockaddr_storage* addr, char* ip)
+bool IPFromSockaddr(const struct sockaddr_any* addr, char* ip)
 {
-    switch (addr->ss_family) {
+    switch (addr->san_family) {
         case AF_INET :
-            return inet_ntop(addr->ss_family, &((struct sockaddr_in*)addr)->sin_addr, ip,
+            return inet_ntop(addr->san_family, &addr->s4.sin_addr, ip,
                              INET6_ADDRSTRLEN);
         case AF_INET6 :
-            return inet_ntop(addr->ss_family, &((struct sockaddr_in6*)addr)->sin6_addr, ip,
+            return inet_ntop(addr->san_family, &addr->s6.sin6_addr, ip,
                              INET6_ADDRSTRLEN);
         default :
             errno = EAFNOSUPPORT;
@@ -258,9 +257,9 @@ void Hline()
     printf("------------------------------------------------------- --- -> >\n");
 }
 
-socklen_t SockaddrLen(const struct sockaddr_storage* addr)
+socklen_t SockaddrLen(const struct sockaddr_any* addr)
 {
-    return addr->ss_family == AF_INET ?
+    return addr->san_family == AF_INET ?
            sizeof(struct sockaddr_in) :
            sizeof(struct sockaddr_in6);
 }

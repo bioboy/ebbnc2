@@ -20,10 +20,11 @@
 
 #include <sys/socket.h>
 #include "config.h"
+#include "misc.h"
 
 struct Server {
     int sock;
-    struct sockaddr_storage addr;
+    struct sockaddr_any addr;
     struct Config* cfg;
 };
 

@@ -54,7 +54,7 @@ bool Server_Listen2(struct Server* s, const char* ip, int port)
         return false;
     }
 
-    s->sock = socket(s->addr.ss_family, SOCK_STREAM, 0);
+    s->sock = socket(s->addr.san_family, SOCK_STREAM, 0);
     if (s->sock < 0) {
         perror("socket");
         return false;
@@ -65,7 +65,7 @@ bool Server_Listen2(struct Server* s, const char* ip, int port)
         setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     }
 
-    if (bind(s->sock, (struct sockaddr*)&s->addr, SockaddrLen(&s->addr)) < 0) {
+    if (bind(s->sock, &s->addr.sa, SockaddrLen(&s->addr)) < 0) {
         perror("bind");
         return false;
     }
@@ -97,9 +97,9 @@ struct Server* Server_Listen(struct Config* cfg)
 
 void Server_Accept(struct Server* s)
 {
-    struct sockaddr_storage addr;
+    struct sockaddr_any addr;
     socklen_t len = sizeof(addr);
-    int sock = accept(s->sock, (struct sockaddr*)&addr, &len);
+    int sock = accept(s->sock, &addr.sa, &len);
     if (sock < 0) {
         perror("accept");
         return;
