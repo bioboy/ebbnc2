@@ -18,7 +18,7 @@
 #ifndef EBBNC_HEX_H
 #define EBBNC_HEX_H
 
-#include <stdio.h>
+#include <sys/types.h>
 
 ssize_t HexEncode(const char* src, size_t srcLen, char* dst, size_t dstSize);
 ssize_t HexDecode(const char* src, size_t srcLen, char* dst, size_t dstSize);
