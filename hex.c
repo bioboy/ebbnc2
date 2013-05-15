@@ -28,7 +28,7 @@ ssize_t HexEncode(const char* src, size_t srcLen, char* dst, size_t dstSize)
     char* dp = dst;
     const char* sp;
     ssize_t dstLen = 0;
-    for (sp = src; srcLen > 0 && dstLen + 2 < (ssize_t) dstSize; sp++) {
+    for (sp = src; srcLen > 0 && dstLen + 2 < (ssize_t)dstSize; sp++) {
 
         unsigned int ascii = (unsigned int) *sp;
         unsigned int digit2 = ascii % 16;
@@ -52,7 +52,6 @@ inline int HexDecodeChar(unsigned int ch)
         digit = ch - '0';
     }
     else {
-        ch = toupper(ch);
         if (ch >= 'A' || ch <= 'F') {
             digit = ch - 'A' + 10;
         }
@@ -73,7 +72,7 @@ ssize_t HexDecode(const char* src, size_t srcLen, char* dst, size_t dstSize)
     char* dp = dst;
     const char* sp;
     ssize_t dstLen = 0;
-    for (sp = src; srcLen > 0 && dstLen + 1 < (ssize_t) dstSize; sp += 2) {
+    for (sp = src; srcLen > 0 && dstLen + 1 < (ssize_t)dstSize; sp += 2) {
 
         int digit1 = HexDecodeChar((unsigned int) *sp);
         if (digit1 == -1) { return -1; }
