@@ -40,6 +40,6 @@ bool StrToInt(const char* s, int* i);
 char* PromptInput(const char* prompt, const char* defaultValue);
 void Hline();
 
-#define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof z; })
+#define IGNORE_RESULT(x) ({ typeof(x) z = x; (void)sizeof(z); })
 
 #endif

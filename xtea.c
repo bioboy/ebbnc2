@@ -8,11 +8,11 @@
 //
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
 //  GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.    If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <unistd.h>
@@ -22,19 +22,19 @@
 #include <fcntl.h>
 #include "xtea.h"
 
-#define XTEA_DELTA          0x9E3779B9
+#define XTEA_DELTA            0x9E3779B9
 #define XTEA_NUM_ROUNDS     32
  
 void XTeaEncrypt(const unsigned char src[XTEA_BLOCK_SIZE],
                  unsigned char dst[XTEA_BLOCK_SIZE],
                  const unsigned char ckey[XTEA_KEY_SIZE])
 {
-    const uint32_t* s = (const uint32_t*) src;
+    const uint32_t* s = (const uint32_t*)src;
     uint32_t s0 = s[0];
     uint32_t s1 = s[1];
     uint32_t sum = 0;
-    uint32_t* key = (uint32_t*) ckey;
-    uint32_t* d = (uint32_t*) dst;
+    uint32_t* key = (uint32_t*)ckey;
+    uint32_t* d = (uint32_t*)dst;
     
     unsigned int i;
     for (i = 0; i < XTEA_NUM_ROUNDS; i++) {
@@ -48,8 +48,8 @@ void XTeaEncrypt(const unsigned char src[XTEA_BLOCK_SIZE],
 }
 
 ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
-                       unsigned char* dst, size_t dstSize,
-                       const unsigned char* key)
+                         unsigned char* dst, size_t dstSize,
+                         const unsigned char* key)
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
@@ -85,9 +85,9 @@ ssize_t XTeaEncryptECB(const unsigned char* src, size_t srcLen,
 }
  
 ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
-                       unsigned char* dst, size_t dstSize,
-                       const unsigned char ivec[XTEA_BLOCK_SIZE],
-                       const unsigned char key[XTEA_KEY_SIZE])
+                         unsigned char* dst, size_t dstSize,
+                         const unsigned char ivec[XTEA_BLOCK_SIZE],
+                         const unsigned char key[XTEA_KEY_SIZE])
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
@@ -102,7 +102,7 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
         memcpy(block, src, XTEA_BLOCK_SIZE);
         unsigned int i;
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
-            block[i] = (unsigned char) block[i] ^ iv[i];
+            block[i] = (unsigned char)block[i] ^ iv[i];
         }
         
         XTeaEncrypt(block, dst, key);
@@ -129,7 +129,7 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
     dstLen += padding;
     unsigned int i;
     for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
-        block[i] = (unsigned char) block[i] ^ iv[i];
+        block[i] = (unsigned char)block[i] ^ iv[i];
     }
     XTeaEncrypt(block, dst, key);
 
@@ -140,12 +140,12 @@ void XTeaDecrypt(const unsigned char src[XTEA_BLOCK_SIZE],
                  unsigned char dst[XTEA_BLOCK_SIZE], 
                  const unsigned char ckey[XTEA_KEY_SIZE])
 {
-    const uint32_t* s = (const uint32_t*) src;
+    const uint32_t* s = (const uint32_t*)src;
     uint32_t s0 = s[0];
     uint32_t s1 = s[1];
     uint32_t sum = XTEA_DELTA * XTEA_NUM_ROUNDS;
-    uint32_t* key = (uint32_t*) ckey;
-    uint32_t* d = (uint32_t*) dst;
+    uint32_t* key = (uint32_t*)ckey;
+    uint32_t* d = (uint32_t*)dst;
     
     unsigned int i;
     for (i = 0; i < XTEA_NUM_ROUNDS; i++) {
@@ -159,8 +159,8 @@ void XTeaDecrypt(const unsigned char src[XTEA_BLOCK_SIZE],
 }
 
 ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
-                       unsigned char* dst, size_t dstSize,
-                       const unsigned char* key)
+                         unsigned char* dst, size_t dstSize,
+                         const unsigned char* key)
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
@@ -177,7 +177,7 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
     }
     
     int padding = *(dst - 1) - '0';
-    if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
+    if (padding < 1 || (unsigned int)padding > XTEA_BLOCK_SIZE) {
         return -1;
     }
 
@@ -185,9 +185,9 @@ ssize_t XTeaDecryptECB(const unsigned char* src, size_t srcLen,
 }
 
 ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
-                       unsigned char* dst, size_t dstSize,
-                       const unsigned char ivec[XTEA_BLOCK_SIZE],
-                       const unsigned char key[XTEA_KEY_SIZE])
+                         unsigned char* dst, size_t dstSize,
+                         const unsigned char ivec[XTEA_BLOCK_SIZE],
+                         const unsigned char key[XTEA_KEY_SIZE])
 {
     ssize_t remaining = srcLen;
     ssize_t dstLen = srcLen;
@@ -206,7 +206,7 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
         
         unsigned int i;
         for (i = 0; i < XTEA_BLOCK_SIZE; ++i) {
-            dst[i] = (unsigned char) dst[i] ^ iv[i];
+            dst[i] = (unsigned char)dst[i] ^ iv[i];
         }
         
         src += XTEA_BLOCK_SIZE;
@@ -216,7 +216,7 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
     }
     
     int padding = *(dst - 1) - '0';
-    if (padding < 1 || (unsigned int) padding > XTEA_BLOCK_SIZE) {
+    if (padding < 1 || (unsigned int)padding > XTEA_BLOCK_SIZE) {
         return -1;
     }
     

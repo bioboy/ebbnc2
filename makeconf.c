@@ -34,7 +34,7 @@ void AbortHandler(int signo)
   static const char* abortMessage = "\nConfig creation aborted!\n";
   IGNORE_RESULT(write(fileno(stdout), abortMessage, strlen(abortMessage)));
   _exit(1);
-  (void) signo;
+  (void)signo;
 }
 
 
@@ -45,15 +45,13 @@ char* Encrypt(const char* plain, const char* key)
   char* cipher = malloc(cipherSize);
   if (!cipher) { return NULL; }
 
-  if (XTeaGenerateIVec((unsigned char*) cipher) < 0) { return NULL; }
+  if (XTeaGenerateIVec((unsigned char*)cipher) < 0) { return NULL; }
 
   memcpy(cipher, "12345678", XTEA_BLOCK_SIZE);
   
-  // encrypt plain conf
-  
-  ssize_t len = XTeaEncryptCBC((unsigned char*) plain, strlen(plain), 
-                               (unsigned char*) cipher + XTEA_BLOCK_SIZE, cipherSize - XTEA_BLOCK_SIZE, 
-                               (unsigned char*) cipher, (unsigned char*) key);
+  ssize_t len = XTeaEncryptCBC((unsigned char*)plain, strlen(plain), 
+                               (unsigned char*)cipher + XTEA_BLOCK_SIZE, cipherSize - XTEA_BLOCK_SIZE, 
+                               (unsigned char*)cipher, (unsigned char*)key);
   if (len < 0) {
     free(cipher);
     return NULL;
@@ -61,7 +59,6 @@ char* Encrypt(const char* plain, const char* key)
   
   len += XTEA_BLOCK_SIZE;
   
-  // hex encode cipher data
   size_t encodedSize = len * 2 + 1;
   char* encoded = malloc(encodedSize);
   if (!encoded) {
@@ -372,6 +369,6 @@ int main(int argc, char** argv)
   
   return 0;
   
-  (void) argc;
-  (void) argv;
+  (void)argc;
+  (void)argv;
 }

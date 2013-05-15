@@ -253,9 +253,9 @@ char* Config_DecryptEmbedded(const char* key)
   unsigned char ivec[XTEA_BLOCK_SIZE];
   memcpy(ivec, cipher, XTEA_BLOCK_SIZE);
   
-  ssize_t plainLen = XTeaDecryptCBC((unsigned char*)cipher + XTEA_BLOCK_SIZE, cipherLen - XTEA_BLOCK_SIZE, 
-                                    (unsigned char*)plain, plainSize, 
-                                    (unsigned char*)ivec, (unsigned char*)key);
+  ssize_t plainLen = XTeaDecryptCBC((unsigned char*) cipher + XTEA_BLOCK_SIZE, cipherLen - XTEA_BLOCK_SIZE, 
+                                    (unsigned char*) plain, plainSize, 
+                                    (unsigned char*) ivec, (unsigned char*) key);
   if (plainLen < 0) {
     free(cipher);
     free(plain);
