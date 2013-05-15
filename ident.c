@@ -32,13 +32,13 @@ bool IdentLookup(const struct sockaddr_storage* localAddr,
     struct sockaddr_storage addr;
     memcpy(&addr, peerAddr, sizeof(addr));
     switch (addr.ss_family) {
-        case AF_INET:
+        case AF_INET :
             ((struct sockaddr_in*)&addr)->sin_port = htons(IDENT_PORT);
             break;
-        case AF_INET6:
+        case AF_INET6 :
             ((struct sockaddr_in6*)&addr)->sin6_port = htons(IDENT_PORT);
             break;
-        default:
+        default :
             return false;
     }
 

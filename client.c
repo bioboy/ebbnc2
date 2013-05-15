@@ -106,10 +106,10 @@ bool Client_Idnt(struct Client* c)
     if (!IPFromSockaddr(&c->cAddr, ip)) { return false; }
 
     char hostname[NI_MAXHOST];
-    if (!c->cfg->dnsLookup || 
+    if (!c->cfg->dnsLookup ||
         getnameinfo((struct sockaddr*)&c->cAddr, sizeof(c->cAddr),
                     hostname, sizeof(hostname), NULL, 0, 0) != 0) {
-        
+
         strncpy(hostname, ip, sizeof(ip));
     }
 
@@ -247,12 +247,12 @@ void* Client_ThreadMain(void* cv)
     struct Client* c = (struct Client*) cv;
 
     if (c->cfg->writeTimeout > 0) { SetWriteTimeout(c->cSock, c->cfg->writeTimeout); }
-    
-    if (Client_Connect(c) && 
-        Client_Idnt(c) && 
+
+    if (Client_Connect(c) &&
+        Client_Idnt(c) &&
         Client_Welcome(c)) {
-        
-        Client_Relay(c); 
+
+        Client_Relay(c);
     }
 
     Client_Free(&c);

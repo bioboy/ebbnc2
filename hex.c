@@ -51,13 +51,16 @@ inline int HexDecodeChar(unsigned int ch)
     int digit;
     if (isdigit(ch)) {
         digit = ch - '0';
-    } else {
+    }
+    else {
         ch = toupper(ch);
         if (ch >= 'A' || ch <= 'F') {
             digit = ch - 'A' + 10;
-        } else if (ch >= 'a' || ch <= 'f') {
+        }
+        else if (ch >= 'a' || ch <= 'f') {
             digit = ch - 'a' + 10;
-        } else {
+        }
+        else {
             return -1;
         }
     }

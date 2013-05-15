@@ -135,8 +135,7 @@ int main(int argc, char** argv)
 
         error = ErrorNone;
         switch (stage) {
-            case StageListenIP :
-            {
+            case StageListenIP : {
                 char* value = PromptInput("Listen ip", "0.0.0.0");
                 if (ValidIP(value)) {
                     c->listenIP = strdup(value);
@@ -147,8 +146,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageListenPort :
-            {
+            case StageListenPort : {
                 char* value = PromptInput("Listen port", NULL);
                 if (*value != '\0') {
                     if (StrToInt(value, &c->listenPort) != 1 || !ValidPort(c->listenPort)) {
@@ -160,8 +158,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageRemoteIP :
-            {
+            case StageRemoteIP : {
                 char* value = PromptInput("Remote ip", NULL);
                 if (*value != '\0') {
                     if (ValidIP(value)) {
@@ -177,8 +174,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageRemotePort :
-            {
+            case StageRemotePort : {
                 char* value = PromptInput("Remote port", NULL);
                 if (*value != '\0') {
                     if (StrToInt(value, &c->remotePort) != 1 || !ValidPort(c->remotePort)) {
@@ -190,8 +186,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageIdnt :
-            {
+            case StageIdnt : {
                 char* value = PromptInput("Send idnt", "true");
                 if (!strcasecmp(value, "true")) {
                     c->idnt = true;
@@ -204,8 +199,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageIdentTimeout :
-            {
+            case StageIdentTimeout : {
                 if (!c->idnt) { break; }
 
                 char* value = PromptInput("Ident timeout", "10");
@@ -219,8 +213,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageIdleTimeout :
-            {
+            case StageIdleTimeout : {
                 char* value = PromptInput("Idle timeout", "0");
                 if (*value != '\0') {
                     if (StrToInt(value, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
@@ -232,8 +225,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageWriteTimeout :
-            {
+            case StageWriteTimeout : {
                 char* value = PromptInput("Write timeout", "30");
                 if (*value != '\0') {
                     if (StrToInt(value, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
@@ -245,8 +237,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageDnsLookup :
-            {
+            case StageDnsLookup : {
                 char* value = PromptInput("Dns lookup", "true");
                 if (!strcasecmp(value, "true")) {
                     c->dnsLookup = true;
@@ -259,8 +250,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StagePidFile :
-            {
+            case StagePidFile : {
                 char* value = PromptInput("Pid file path", "none");
                 if (strcmp(value, "none")) {
                     c->pidFile = strdup(value);
@@ -268,8 +258,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageWelcomeMsg :
-            {
+            case StageWelcomeMsg : {
                 char* value = PromptInput("Welcome message", "none");
                 if (strcmp(value, "none")) {
                     c->welcomeMsg = strdup(value);
@@ -277,8 +266,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StagePassword :
-            {
+            case StagePassword : {
                 char* value = PromptInput("Password", NULL);
                 if (*value != '\0') {
                     strncpy(key, value, sizeof(key) - 1);
@@ -288,8 +276,7 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            default :
-            {
+            default : {
                 done = true;
                 break;
             }
@@ -297,24 +284,20 @@ int main(int argc, char** argv)
 
 
         switch (error) {
-            case ErrorNone : 
-            {
+            case ErrorNone : {
                 stage++;
                 break;
             }
-            case ErrorStrdup : 
-            {
+            case ErrorStrdup : {
                 perror("strdup");
                 done = true;
                 break;
             }
-            case ErrorValue :
-            {
+            case ErrorValue : {
                 fprintf(stderr, "Invalid value.\n");
                 break;
             }
-            case ErrorDefault :
-            {
+            case ErrorDefault : {
                 fprintf(stderr, "No default value.\n");
                 break;
             }
