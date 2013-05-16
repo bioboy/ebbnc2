@@ -41,8 +41,10 @@ ssize_t HexEncode(const char* src, size_t srcLen, char* dst, size_t dstSize)
         srcLen--;
     }
 
+    if (srcLen > 0) { return -1; }
+
     *dp = '\0';
-    return srcLen > 0 ? -1 : dstLen;
+    return dstLen;
 }
 
 inline int HexDecodeChar(unsigned int ch)
@@ -85,7 +87,8 @@ ssize_t HexDecode(const char* src, size_t srcLen, char* dst, size_t dstSize)
         srcLen -= 2;
     }
 
-    *dp = '\0';
+    if (srcLen > 0) { return -1; }
 
-    return srcLen > 0 ? -1 : dstLen;
+    *dp = '\0';
+    return dstLen;
 }
