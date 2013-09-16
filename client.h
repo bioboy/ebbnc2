@@ -24,7 +24,7 @@
 #include "server.h"
 #include "misc.h"
 
-#define CLIENT_STACKSIZE 1001024
+#define CLIENT_STACKSIZE 65536
 
 struct Client {
     pthread_t threadId;
