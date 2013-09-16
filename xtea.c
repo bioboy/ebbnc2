@@ -220,8 +220,8 @@ int XTeaGenerateIVec(unsigned char ivec[XTEA_BLOCK_SIZE])
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) { return -1; }
 
-    ssize_t ret = read(fd, ivec, sizeof(ivec));
+    ssize_t ret = read(fd, ivec, XTEA_BLOCK_SIZE);
     close(fd);
 
-    return ret == sizeof(ivec) ? 0 : -1;
+    return ret == XTEA_BLOCK_SIZE ? 0 : -1;
 }

@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     Hline();
     atexit(Hline);
 
-    struct Config* c = Config_New();
+    Config* c = Config_New();
     if (!c) {
         fprintf(stderr, "Unable to create config: %s\n", strerror(errno));
         return 1;

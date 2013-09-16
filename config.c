@@ -27,9 +27,9 @@
 #include "hex.h"
 #include "xtea.h"
 
-struct Config* Config_New()
+Config* Config_New()
 {
-    struct Config* c = calloc(1, sizeof(struct Config));
+    Config* c = calloc(1, sizeof(Config));
     if (!c) { return NULL; }
 
     c->listenPort = -1;
@@ -43,10 +43,10 @@ struct Config* Config_New()
     return c;
 }
 
-void Config_Free(struct Config** cp)
+void Config_Free(Config** cp)
 {
     if (*cp) {
-        struct Config* c = *cp;
+        Config* c = *cp;
         free(c->listenIP);
         free(c->remoteHost);
         free(c->pidFile);
@@ -56,7 +56,7 @@ void Config_Free(struct Config** cp)
     }
 }
 
-bool Config_SanityCheck(struct Config* c)
+bool Config_SanityCheck(Config* c)
 {
     bool insane = false;
     if (c->listenPort == -1) {
@@ -77,9 +77,9 @@ bool Config_SanityCheck(struct Config* c)
     return !insane;
 }
 
-struct Config* Config_LoadBuffer(const char* buffer)
+Config* Config_LoadBuffer(const char* buffer)
 {
-    struct Config* c = Config_New();
+    Config* c = Config_New();
     if (!c) {
         fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
         return NULL;
@@ -204,7 +204,7 @@ strduperror:
     return NULL;
 }
 
-struct Config* Config_LoadFile(const char* path)
+Config* Config_LoadFile(const char* path)
 {
     FILE* fp = fopen(path, "r");
     if (!fp) {
@@ -232,7 +232,7 @@ struct Config* Config_LoadFile(const char* path)
         return NULL;
     }
 
-    struct Config* c = Config_LoadBuffer(buffer);
+    Config* c = Config_LoadBuffer(buffer);
     free(buffer);
 
     return c;
@@ -289,7 +289,7 @@ char* Config_DecryptEmbedded(const char* key)
     return plain;
 }
 
-struct Config* Config_LoadEmbedded(const char* key)
+Config* Config_LoadEmbedded(const char* key)
 {
     char* buffer = Config_DecryptEmbedded(key);
     if (!buffer) {
@@ -297,14 +297,14 @@ struct Config* Config_LoadEmbedded(const char* key)
         return NULL;
     }
 
-    struct Config* cfg = Config_LoadBuffer(buffer);
+    Config* cfg = Config_LoadBuffer(buffer);
     free(buffer);
     return cfg;
 }
 
 #endif
 
-char* Config_SaveBuffer(struct Config* c)
+char* Config_SaveBuffer(Config* c)
 {
     char* buffer = Scatprintf(NULL, "listenip=%s\n", c->listenIP);
     if (!buffer) { return NULL; }

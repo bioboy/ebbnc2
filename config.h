@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-struct Config {
+typedef struct Config {
     char* listenIP;
     int listenPort;
     char* remoteHost;
@@ -32,13 +32,13 @@ struct Config {
     bool dnsLookup;
     char* pidFile;
     char* welcomeMsg;
-};
+} Config;
 
-struct Config* Config_New();
-struct Config* Config_LoadBuffer(const char* buffer);
-struct Config* Config_LoadFile(const char* path);
-struct Config* Config_LoadEmbedded(const char* key);
-char* Config_SaveBuffer(struct Config* c);
-void Config_Free(struct Config** cp);
+Config* Config_New();
+Config* Config_LoadBuffer(const char* buffer);
+Config* Config_LoadFile(const char* path);
+Config* Config_LoadEmbedded(const char* key);
+char* Config_SaveBuffer(Config* c);
+void Config_Free(Config** cp);
 
 #endif

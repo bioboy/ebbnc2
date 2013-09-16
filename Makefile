@@ -1,5 +1,4 @@
-
-CFLAGS := -O3 -Wall -Wextra
+CFLAGS := -O3 -Wall -Wextra -pedantic
 LIBS := -lpthread
 EBBNC_OBJS := main.o server.o client.o config.o misc.o ident.o xtea.o hex.o
 CONF_OBJS := makeconf.o config.o misc.o hex.o xtea.o
