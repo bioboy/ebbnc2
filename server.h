@@ -22,14 +22,14 @@
 #include "config.h"
 #include "misc.h"
 
-struct Server {
+typedef struct Server {
     int sock;
     struct sockaddr_any addr;
-    struct Config* cfg;
-};
+    Config* cfg;
+} Server;
 
-struct Server* Server_Listen(struct Config* cfg);
-void Server_Free(struct Server** sp);
-void Server_Loop(struct Server* s);
+Server* Server_Listen(Config* cfg);
+void Server_Free(Server** sp);
+void Server_Loop(Server* s);
 
 #endif

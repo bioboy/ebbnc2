@@ -76,9 +76,9 @@ int main(int argc, char** argv)
     printf("Loading config file ..\n");
 
 #ifndef CONF_EMBEDDED
-    struct Config* cfg = Config_LoadFile(argv[1]);
+    Config* cfg = Config_LoadFile(argv[1]);
 #else
-    struct Config* cfg = Config_LoadEmbedded(key);
+    Config* cfg = Config_LoadEmbedded(key);
 #endif
     if (!cfg) { return 1; }
 
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
     }
 
     printf("Initialising listening socket ..\n");
-    struct Server* srv = Server_Listen(cfg);
+    Server* srv = Server_Listen(cfg);
     if (!srv) {
         Server_Free(&srv);
         Config_Free(&cfg);

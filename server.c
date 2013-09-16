@@ -25,9 +25,9 @@
 #include "server.h"
 #include "client.h"
 
-struct Server* Server_New()
+Server* Server_New()
 {
-    struct Server* s = calloc(1, sizeof(struct Server));
+    Server* s = calloc(1, sizeof(Server));
     if (!s) { return NULL; }
 
     s->sock = -1;
@@ -35,17 +35,17 @@ struct Server* Server_New()
     return s;
 }
 
-void Server_Free(struct Server** sp)
+void Server_Free(Server** sp)
 {
     if (*sp) {
-        struct Server* s = *sp;
+        Server* s = *sp;
         if (s->sock >= 0) { close(s->sock); }
         free(s);
         *sp = NULL;
     }
 }
 
-bool Server_Listen2(struct Server* s, const char* ip, int port)
+bool Server_Listen2(Server* s, const char* ip, int port)
 {
     if (!IPPortToSockaddr(ip, port, &s->addr)) {
         fprintf(stderr, "Invalid listenip.\n");
@@ -76,9 +76,9 @@ bool Server_Listen2(struct Server* s, const char* ip, int port)
     return true;
 }
 
-struct Server* Server_Listen(struct Config* cfg)
+Server* Server_Listen(Config* cfg)
 {
-    struct Server* s = Server_New();
+    Server* s = Server_New();
     if (!s) {
         perror("Server_New");
         return NULL;
@@ -93,7 +93,7 @@ struct Server* Server_Listen(struct Config* cfg)
     return s;
 }
 
-void Server_Accept(struct Server* s)
+void Server_Accept(Server* s)
 {
     struct sockaddr_any addr;
     socklen_t len = sizeof(addr);
@@ -106,7 +106,7 @@ void Server_Accept(struct Server* s)
     Client_Launch(s, sock, &addr);
 }
 
-void Server_Loop(struct Server* s)
+void Server_Loop(Server* s)
 {
     while (true) { Server_Accept(s); }
 }

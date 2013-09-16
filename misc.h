@@ -37,8 +37,10 @@ struct sockaddr_any
 };
 
 bool ValidIP(const char* ip);
+bool ValidHost(const char* host);
 bool ValidPort(int port);
 bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr);
+bool HostPortToSockaddr(const char* host, int port, struct sockaddr_any* addr, const char** errmsg);
 int PortFromSockaddr(const struct sockaddr_any* addr);
 bool IPFromSockaddr(const struct sockaddr_any* addr, char* ip);
 void StripCRLF(char* buf);

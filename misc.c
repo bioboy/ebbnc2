@@ -24,12 +24,19 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include "misc.h"
 
 bool ValidIP(const char* ip)
 {
     struct sockaddr_any addr;
     return IPPortToSockaddr(ip, 0, &addr);
+}
+
+bool ValidHost(const char* host)
+{
+    struct sockaddr_any addr;
+    return HostPortToSockaddr(host, 0, &addr, NULL);
 }
 
 bool ValidPort(int port)
@@ -39,7 +46,7 @@ bool ValidPort(int port)
 
 bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
 {
-    memset(addr, 0, sizeof(addr));
+    memset(addr, 0, sizeof(*addr));
     if (inet_pton(AF_INET, ip, &addr->s4.sin_addr) == 1) {
         addr->san_family = AF_INET;
         addr->s4.sin_port = htons(port);
@@ -54,6 +61,35 @@ bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
 
     errno = EAFNOSUPPORT;
     return false;
+}
+
+bool HostPortToSockaddr(const char* host, int port, struct sockaddr_any* addr, const char** errmsg)
+{
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_socktype = SOCK_STREAM;
+
+    char service[6];
+    snprintf(service, sizeof(service), "%i", port);
+
+    struct addrinfo* res;
+    int error = getaddrinfo(host, service, &hints, &res);
+    if (error != 0) {
+      if (errmsg) {
+        if (error == EAI_SYSTEM) {
+          *errmsg = NULL;
+        }
+        else {
+          *errmsg = gai_strerror(error);
+        }
+      }
+      return false;
+    }
+
+    memcpy(addr, res->ai_addr, res->ai_addrlen);
+    return true;
 }
 
 int PortFromSockaddr(const struct sockaddr_any* addr)

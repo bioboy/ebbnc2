@@ -29,9 +29,9 @@
 #include "ident.h"
 #include "misc.h"
 
-struct Client* Client_New()
+Client* Client_New()
 {
-    struct Client* c = calloc(1, sizeof(struct Client));
+    Client* c = calloc(1, sizeof(Client));
     if (!c) { return NULL; }
 
     c->cSock = -1;
@@ -40,10 +40,10 @@ struct Client* Client_New()
     return c;
 }
 
-void Client_Free(struct Client** cp)
+void Client_Free(Client** cp)
 {
     if (*cp) {
-        struct Client* c = *cp;
+        Client* c = *cp;
         if (c->cSock >= 0) { close(c->cSock); }
         if (c->rSock >= 0) { close(c->rSock); }
         free(c);
@@ -51,7 +51,7 @@ void Client_Free(struct Client** cp)
     }
 }
 
-void Client_ErrorReply(struct Client* c, const char* msg)
+void Client_ErrorReply(Client* c, const char* msg)
 {
     char* buf = Sprintf("421 %s\r\n", msg);
     if (!buf) {
@@ -63,7 +63,7 @@ void Client_ErrorReply(struct Client* c, const char* msg)
     free(buf);
 }
 
-void Client_ErrnoReply(struct Client* c, const char* func, int errno_)
+void Client_ErrnoReply(Client* c, const char* func, int errno_)
 {
     char errnoMsg[256];
     if (strerror_r(errno_, errnoMsg, sizeof(errnoMsg)) < 0) {
@@ -80,7 +80,7 @@ void Client_ErrnoReply(struct Client* c, const char* func, int errno_)
     free(msg);
 }
 
-bool Client_Idnt(struct Client* c)
+bool Client_Idnt(Client* c)
 {
     if (!c->cfg->idnt) { return true; }
 
@@ -104,7 +104,7 @@ bool Client_Idnt(struct Client* c)
 
     char hostname[NI_MAXHOST];
     if (!c->cfg->dnsLookup ||
-        getnameinfo(&c->cAddr.sa, sizeof(c->cAddr), 
+        getnameinfo(&c->cAddr.sa, sizeof(c->cAddr),
                     hostname, sizeof(hostname), NULL, 0, 0) != 0) {
 
         strncpy(hostname, ip, sizeof(ip));
@@ -122,10 +122,23 @@ bool Client_Idnt(struct Client* c)
     return ret;
 }
 
-bool Client_Connect(struct Client* c)
+bool Client_Connect(Client* c)
 {
-    if (!IPPortToSockaddr(c->cfg->remoteIP, c->cfg->remotePort, &c->rAddr)) {
-        Client_ErrnoReply(c, "IPPortToSockaddr", errno);
+    const char* errmsg = NULL;
+    if (!HostPortToSockaddr(c->cfg->remoteHost, c->cfg->remotePort, &c->rAddr, &errmsg)) {
+        if (!errmsg) {
+          Client_ErrnoReply(c, "HostPortToSockaddr", errno);
+          return false;
+        }
+
+        char* msg = Sprintf("HostPortToSockaddr: %s", errmsg);
+        if (!msg) {
+            perror("sprintf");
+            return false;
+        }
+
+        Client_ErrorReply(c, msg);
+        free(msg);
         return false;
     }
 
@@ -150,7 +163,7 @@ bool Client_Connect(struct Client* c)
     return true;
 }
 
-void Client_Relay(struct Client* c)
+void Client_Relay(Client* c)
 {
     int timeout = c->cfg->idleTimeout == 0 ? -1 : c->cfg->idleTimeout * 1000;
     char buf[BUFSIZ];
@@ -222,7 +235,7 @@ void Client_Relay(struct Client* c)
     }
 }
 
-bool Client_Welcome(struct Client* c)
+bool Client_Welcome(Client* c)
 {
     if (!c->cfg->welcomeMsg) { return true; }
 
@@ -241,7 +254,7 @@ bool Client_Welcome(struct Client* c)
 
 void* Client_ThreadMain(void* cv)
 {
-    struct Client* c = (struct Client*) cv;
+    Client* c = (Client*) cv;
 
     if (c->cfg->writeTimeout > 0) { SetWriteTimeout(c->cSock, c->cfg->writeTimeout); }
 
@@ -256,10 +269,10 @@ void* Client_ThreadMain(void* cv)
     return NULL;
 }
 
-void Client_Launch(struct Server* srv, int sock,
+void Client_Launch(Server* srv, int sock,
                    const struct sockaddr_any* addr)
 {
-    struct Client* c = Client_New();
+    Client* c = Client_New();
     if (!c) {
         perror("Client_New");
         return;

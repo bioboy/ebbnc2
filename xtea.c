@@ -96,7 +96,7 @@ ssize_t XTeaEncryptCBC(const unsigned char* src, size_t srcLen,
 
     unsigned char block[XTEA_BLOCK_SIZE];
     unsigned char iv[XTEA_BLOCK_SIZE];
-    memcpy(iv, ivec, sizeof(iv));
+    memcpy(iv, ivec, XTEA_BLOCK_SIZE);
     while (remaining >= XTEA_BLOCK_SIZE) {
 
         memcpy(block, src, XTEA_BLOCK_SIZE);
@@ -192,7 +192,7 @@ ssize_t XTeaDecryptCBC(const unsigned char* src, size_t srcLen,
 
     unsigned char temp[XTEA_BLOCK_SIZE];
     unsigned char iv[XTEA_BLOCK_SIZE];
-    memcpy(iv, ivec, sizeof(ivec));
+    memcpy(iv, ivec, XTEA_BLOCK_SIZE);
     while (remaining > 0) {
 
         memcpy(temp, src, XTEA_BLOCK_SIZE);
@@ -220,8 +220,8 @@ int XTeaGenerateIVec(unsigned char ivec[XTEA_BLOCK_SIZE])
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0) { return -1; }
 
-    ssize_t ret = read(fd, ivec, sizeof(ivec));
+    ssize_t ret = read(fd, ivec, XTEA_BLOCK_SIZE);
     close(fd);
 
-    return ret == sizeof(ivec) ? 0 : -1;
+    return ret == XTEA_BLOCK_SIZE ? 0 : -1;
 }
