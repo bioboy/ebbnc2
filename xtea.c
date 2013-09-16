@@ -22,8 +22,8 @@
 #include <fcntl.h>
 #include "xtea.h"
 
-#define XTEA_DELTA            0x9E3779B9
-#define XTEA_NUM_ROUNDS       32
+#define XTEA_DELTA          0x9E3779B9
+#define XTEA_NUM_ROUNDS     32
 
 void XTeaEncrypt(const unsigned char src[XTEA_BLOCK_SIZE],
                  unsigned char dst[XTEA_BLOCK_SIZE],

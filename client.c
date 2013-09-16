@@ -29,7 +29,7 @@
 #include "ident.h"
 #include "misc.h"
 
-Client* Client_New()
+Client* Client_new()
 {
     Client* c = calloc(1, sizeof(Client));
     if (!c) { return NULL; }
@@ -40,7 +40,7 @@ Client* Client_New()
     return c;
 }
 
-void Client_Free(Client** cp)
+void Client_free(Client** cp)
 {
     if (*cp) {
         Client* c = *cp;
@@ -51,11 +51,11 @@ void Client_Free(Client** cp)
     }
 }
 
-void Client_ErrorReply(Client* c, const char* msg)
+void Client_errorReply(Client* c, const char* msg)
 {
-    char* buf = Sprintf("421 %s\r\n", msg);
+    char* buf = strPrintf("421 %s\r\n", msg);
     if (!buf) {
-        perror("Sprintf");
+        perror("strPrintf");
         return;
     }
 
@@ -63,24 +63,24 @@ void Client_ErrorReply(Client* c, const char* msg)
     free(buf);
 }
 
-void Client_ErrnoReply(Client* c, const char* func, int errno_)
+void Client_errnoReply(Client* c, const char* func, int errno_)
 {
     char errnoMsg[256];
     if (strerror_r(errno_, errnoMsg, sizeof(errnoMsg)) < 0) {
         strncpy(errnoMsg, "Unknown error", sizeof(errnoMsg));
     }
 
-    char* msg = Sprintf("%s: %s", func, errnoMsg);
+    char* msg = strPrintf("%s: %s", func, errnoMsg);
     if (!msg) {
         perror("sprintf");
         return;
     }
 
-    Client_ErrorReply(c, msg);
+    Client_errorReply(c, msg);
     free(msg);
 }
 
-bool Client_Idnt(Client* c)
+bool Client_sendIdnt(Client* c)
 {
     if (!c->cfg->idnt) { return true; }
 
@@ -94,13 +94,13 @@ bool Client_Idnt(Client* c)
             return false;
         }
 
-        if (!IdentLookup(&c->srv->addr, &c->cAddr, c->cfg->identTimeout, user)) {
+        if (!identLookup(&c->srv->addr, &c->cAddr, c->cfg->identTimeout, user)) {
             strcpy(user, "*");
         }
     }
 
     char ip[INET6_ADDRSTRLEN];
-    if (!IPFromSockaddr(&c->cAddr, ip)) { return false; }
+    if (!ipFromSockaddr(&c->cAddr, ip)) { return false; }
 
     char hostname[NI_MAXHOST];
     if (!c->cfg->dnsLookup ||
@@ -110,9 +110,9 @@ bool Client_Idnt(Client* c)
         strncpy(hostname, ip, sizeof(ip));
     }
 
-    char* buf = Sprintf("IDNT %s@%s:%s\n", user, ip, hostname);
+    char* buf = strPrintf("IDNT %s@%s:%s\n", user, ip, hostname);
     if (!buf) {
-        perror("Sprintf");
+        perror("strPrintf");
         return false;
     }
 
@@ -122,48 +122,50 @@ bool Client_Idnt(Client* c)
     return ret;
 }
 
-bool Client_Connect(Client* c)
+bool Client_connect(Client* c)
 {
     const char* errmsg = NULL;
-    if (!HostPortToSockaddr(c->cfg->remoteHost, c->cfg->remotePort, &c->rAddr, &errmsg)) {
+    if (!hostPortToSockaddr(c->cfg->remoteHost, c->cfg->remotePort, &c->rAddr, &errmsg)) {
         if (!errmsg) {
-          Client_ErrnoReply(c, "HostPortToSockaddr", errno);
+          Client_errnoReply(c, "hostPortToSockaddr", errno);
           return false;
         }
 
-        char* msg = Sprintf("HostPortToSockaddr: %s", errmsg);
+        char* msg = strPrintf("hostPortToSockaddr: %s", errmsg);
         if (!msg) {
             perror("sprintf");
             return false;
         }
 
-        Client_ErrorReply(c, msg);
+        Client_errorReply(c, msg);
         free(msg);
         return false;
     }
 
     c->rSock = socket(c->rAddr.san_family, SOCK_STREAM, 0);
     if (c->rSock < 0) {
-        Client_ErrnoReply(c, "socket", errno);
+        Client_errnoReply(c, "socket", errno);
         return false;
     }
 
-    if (c->cfg->writeTimeout > 0) { SetWriteTimeout(c->rSock, c->cfg->writeTimeout); }
+    if (c->cfg->writeTimeout > 0) {
+      setWriteTimeout(c->rSock, c->cfg->writeTimeout);
+    }
 
     {
         int optval = 1;
         setsockopt(c->rSock, IPPROTO_TCP, TCP_NODELAY, (char*)&optval, sizeof(optval));
     }
 
-    if (connect(c->rSock, &c->rAddr.sa, SockaddrLen(&c->rAddr)) < 0) {
-        Client_ErrnoReply(c, "connect", errno);
+    if (connect(c->rSock, &c->rAddr.sa, sockaddrLen(&c->rAddr)) < 0) {
+        Client_errnoReply(c, "connect", errno);
         return false;
     }
 
     return true;
 }
 
-void Client_Relay(Client* c)
+void Client_relay(Client* c)
 {
     int timeout = c->cfg->idleTimeout == 0 ? -1 : c->cfg->idleTimeout * 1000;
     char buf[BUFSIZ];
@@ -180,12 +182,12 @@ void Client_Relay(Client* c)
     while (true) {
         int ret = poll(fds, 2, timeout);
         if (ret == 0) {
-            Client_ErrorReply(c, "Idle timeout");
+            Client_errorReply(c, "Idle timeout");
             break;
         }
 
         if (ret < 0) {
-            Client_ErrnoReply(c, "poll", errno);
+            Client_errnoReply(c, "poll", errno);
             break;
         }
 
@@ -196,16 +198,16 @@ void Client_Relay(Client* c)
             ssize_t ret = write(c->rSock, buf, len);
             if (ret < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    Client_ErrorReply(c, "Server write timeout");
+                    Client_errorReply(c, "Server write timeout");
                 }
                 else {
-                    Client_ErrnoReply(c, "write", errno);
+                    Client_errnoReply(c, "write", errno);
                 }
                 break;
             }
 
             if (ret != len) {
-                Client_ErrorReply(c, "Short write");
+                Client_errorReply(c, "Short write");
                 break;
             }
         }
@@ -213,35 +215,35 @@ void Client_Relay(Client* c)
         if (fds[1].revents & POLLIN) {
             ssize_t len = read(c->rSock, buf, sizeof(buf));
             if (len == 0) {
-                Client_ErrorReply(c, "Connection closed");
+                Client_errorReply(c, "Connection closed");
                 break;
             }
 
             if (len < 0) {
-                Client_ErrnoReply(c, "read", errno);
+                Client_errnoReply(c, "read", errno);
                 break;
             }
 
             ssize_t ret = write(c->cSock, buf, len);
             if (ret < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    Client_ErrorReply(c, "Client write timeout");
+                    Client_errorReply(c, "Client write timeout");
                 }
                 else {
-                    Client_ErrnoReply(c, "write", errno);
+                    Client_errnoReply(c, "write", errno);
                 }
             }
         }
     }
 }
 
-bool Client_Welcome(Client* c)
+bool Client_welcome(Client* c)
 {
     if (!c->cfg->welcomeMsg) { return true; }
 
-    char* buf = Sprintf("220-%s\r\n", c->cfg->welcomeMsg);
+    char* buf = strPrintf("220-%s\r\n", c->cfg->welcomeMsg);
     if (!buf) {
-        perror("Sprintf");
+        perror("strPrintf");
         return false;
     }
 
@@ -252,29 +254,30 @@ bool Client_Welcome(Client* c)
     return ret == len;
 }
 
-void* Client_ThreadMain(void* cv)
+void* Client_threadMain(void* cv)
 {
     Client* c = (Client*) cv;
 
-    if (c->cfg->writeTimeout > 0) { SetWriteTimeout(c->cSock, c->cfg->writeTimeout); }
-
-    if (Client_Connect(c) &&
-        Client_Idnt(c) &&
-        Client_Welcome(c)) {
-
-        Client_Relay(c);
+    if (c->cfg->writeTimeout > 0) {
+      setWriteTimeout(c->cSock, c->cfg->writeTimeout);
     }
 
-    Client_Free(&c);
+    if (Client_connect(c) &&
+        Client_sendIdnt(c) &&
+        Client_welcome(c)) {
+
+        Client_relay(c);
+    }
+
+    Client_free(&c);
     return NULL;
 }
 
-void Client_Launch(Server* srv, int sock,
-                   const struct sockaddr_any* addr)
+void Client_launch(Server* srv, int sock, const struct sockaddr_any* addr)
 {
-    Client* c = Client_New();
+    Client* c = Client_new();
     if (!c) {
-        perror("Client_New");
+        perror("Client_new");
         return;
     }
 
@@ -287,5 +290,5 @@ void Client_Launch(Server* srv, int sock,
     pthread_attr_init(&attr);
     pthread_attr_setstacksize(&attr, CLIENT_STACKSIZE);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    pthread_create(&c->threadId, &attr, Client_ThreadMain, c);
+    pthread_create(&c->threadId, &attr, Client_threadMain, c);
 }

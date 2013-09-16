@@ -26,17 +26,16 @@
 
 #define CLIENT_STACKSIZE 65536
 
-typedef struct Client {
-    pthread_t threadId;
-    int cSock;
+typedef struct {
+    pthread_t           threadId;
+    int                 cSock;
     struct sockaddr_any cAddr;
-    int rSock;
+    int                 rSock;
     struct sockaddr_any rAddr;
-    Config* cfg;
-    Server* srv;
+    Config*             cfg;
+    Server*             srv;
 } Client;
 
-void Client_Launch(Server* srv, int sock,
-                   const struct sockaddr_any* addr);
+void Client_launch(Server* srv, int sock, const struct sockaddr_any* addr);
 
 #endif

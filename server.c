@@ -25,7 +25,7 @@
 #include "server.h"
 #include "client.h"
 
-Server* Server_New()
+Server* Server_new()
 {
     Server* s = calloc(1, sizeof(Server));
     if (!s) { return NULL; }
@@ -35,7 +35,7 @@ Server* Server_New()
     return s;
 }
 
-void Server_Free(Server** sp)
+void Server_free(Server** sp)
 {
     if (*sp) {
         Server* s = *sp;
@@ -45,9 +45,9 @@ void Server_Free(Server** sp)
     }
 }
 
-bool Server_Listen2(Server* s, const char* ip, int port)
+bool Server_listen2(Server* s, const char* ip, int port)
 {
-    if (!IPPortToSockaddr(ip, port, &s->addr)) {
+    if (!ipPortToSockaddr(ip, port, &s->addr)) {
         fprintf(stderr, "Invalid listenip.\n");
         return false;
     }
@@ -63,7 +63,7 @@ bool Server_Listen2(Server* s, const char* ip, int port)
         setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     }
 
-    if (bind(s->sock, &s->addr.sa, SockaddrLen(&s->addr)) < 0) {
+    if (bind(s->sock, &s->addr.sa, sockaddrLen(&s->addr)) < 0) {
         perror("bind");
         return false;
     }
@@ -76,24 +76,24 @@ bool Server_Listen2(Server* s, const char* ip, int port)
     return true;
 }
 
-Server* Server_Listen(Config* cfg)
+Server* Server_listen(Config* cfg)
 {
-    Server* s = Server_New();
+    Server* s = Server_new();
     if (!s) {
-        perror("Server_New");
+        perror("Server_new");
         return NULL;
     }
 
     s->cfg = cfg;
-    if (!Server_Listen2(s, cfg->listenIP, cfg->listenPort)) {
-        Server_Free(&s);
+    if (!Server_listen2(s, cfg->listenIP, cfg->listenPort)) {
+        Server_free(&s);
         return NULL;
     }
 
     return s;
 }
 
-void Server_Accept(Server* s)
+void Server_accept(Server* s)
 {
     struct sockaddr_any addr;
     socklen_t len = sizeof(addr);
@@ -103,10 +103,12 @@ void Server_Accept(Server* s)
         return;
     }
 
-    Client_Launch(s, sock, &addr);
+    Client_launch(s, sock, &addr);
 }
 
-void Server_Loop(Server* s)
+void Server_loop(Server* s)
 {
-    while (true) { Server_Accept(s); }
+    while (true) {
+      Server_accept(s);
+    }
 }

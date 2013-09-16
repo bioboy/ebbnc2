@@ -27,24 +27,24 @@
 #include <netdb.h>
 #include "misc.h"
 
-bool ValidIP(const char* ip)
+bool isValidIP(const char* ip)
 {
     struct sockaddr_any addr;
-    return IPPortToSockaddr(ip, 0, &addr);
+    return ipPortToSockaddr(ip, 0, &addr);
 }
 
-bool ValidHost(const char* host)
+bool isValidHost(const char* host)
 {
     struct sockaddr_any addr;
-    return HostPortToSockaddr(host, 0, &addr, NULL);
+    return hostPortToSockaddr(host, 0, &addr, NULL);
 }
 
-bool ValidPort(int port)
+bool isValidPort(int port)
 {
     return port >= 0 && port <= 65535;
 }
 
-bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
+bool ipPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
 {
     memset(addr, 0, sizeof(*addr));
     if (inet_pton(AF_INET, ip, &addr->s4.sin_addr) == 1) {
@@ -63,7 +63,7 @@ bool IPPortToSockaddr(const char* ip, int port, struct sockaddr_any* addr)
     return false;
 }
 
-bool HostPortToSockaddr(const char* host, int port, struct sockaddr_any* addr, const char** errmsg)
+bool hostPortToSockaddr(const char* host, int port, struct sockaddr_any* addr, const char** errmsg)
 {
     struct addrinfo hints;
     memset(&hints, 0, sizeof(hints));
@@ -92,7 +92,7 @@ bool HostPortToSockaddr(const char* host, int port, struct sockaddr_any* addr, c
     return true;
 }
 
-int PortFromSockaddr(const struct sockaddr_any* addr)
+int portFromSockaddr(const struct sockaddr_any* addr)
 {
     switch (addr->san_family) {
         case AF_INET :
@@ -105,7 +105,7 @@ int PortFromSockaddr(const struct sockaddr_any* addr)
     }
 }
 
-bool IPFromSockaddr(const struct sockaddr_any* addr, char* ip)
+bool ipFromSockaddr(const struct sockaddr_any* addr, char* ip)
 {
     switch (addr->san_family) {
         case AF_INET :
@@ -120,13 +120,13 @@ bool IPFromSockaddr(const struct sockaddr_any* addr, char* ip)
     }
 }
 
-void StripCRLF(char* buf)
+void stripCRLF(char* buf)
 {
     while (*buf && *buf != '\n' && *buf != '\r') { ++buf; }
     *buf = '\0';
 }
 
-char* Sprintf(const char* fmt, ...)
+char* strPrintf(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -146,7 +146,7 @@ char* Sprintf(const char* fmt, ...)
     return buf;
 }
 
-char* Scatprintf(char* s, const char* fmt, ...)
+char* strCatPrintf(char* s, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -185,7 +185,7 @@ char* Scatprintf(char* s, const char* fmt, ...)
     return buf2;
 }
 
-int AlreadyRunning(const char* pidFile)
+int isAlreadyRunning(const char* pidFile)
 {
     FILE* fp = fopen(pidFile, "r");
     if (!fp) {
@@ -209,7 +209,7 @@ int AlreadyRunning(const char* pidFile)
     return 1;
 }
 
-bool CreatePIDFile(const char* pidFile, pid_t pid)
+bool createPIDFile(const char* pidFile, pid_t pid)
 {
     FILE* fp = fopen(pidFile, "w");
     if (!fp) { return false; }
@@ -220,7 +220,7 @@ bool CreatePIDFile(const char* pidFile, pid_t pid)
     return ret > 0;
 }
 
-pid_t Daemonise()
+pid_t daemonise()
 {
     pid_t pid = fork();
     if (pid != 0) { return pid; }
@@ -232,7 +232,7 @@ pid_t Daemonise()
     return 0;
 }
 
-void SetTimeout(int sock, time_t timeout, int opt)
+void setTimeout(int sock, time_t timeout, int opt)
 {
     struct timeval tv;
     tv.tv_sec = timeout;
@@ -241,17 +241,17 @@ void SetTimeout(int sock, time_t timeout, int opt)
     setsockopt(sock, SOL_SOCKET, opt, (char*)&tv, sizeof(tv));
 }
 
-void SetReadTimeout(int sock, time_t timeout)
+void setReadTimeout(int sock, time_t timeout)
 {
-    SetTimeout(sock, timeout, SO_RCVTIMEO);
+    setTimeout(sock, timeout, SO_RCVTIMEO);
 }
 
-void SetWriteTimeout(int sock, time_t timeout)
+void setWriteTimeout(int sock, time_t timeout)
 {
-    SetTimeout(sock, timeout, SO_SNDTIMEO);
+    setTimeout(sock, timeout, SO_SNDTIMEO);
 }
 
-bool StrToInt(const char* s, int* i)
+bool strToInt(const char* s, int* i)
 {
     char* p;
     long value = strtol(s, &p, 10);
@@ -259,7 +259,7 @@ bool StrToInt(const char* s, int* i)
     return *p == '\0';
 }
 
-char* PromptInput(const char* prompt, const char* defaultValue)
+char* promptInput(const char* prompt, const char* defaultValue)
 {
     static char buffer[BUFSIZ];
 
@@ -288,12 +288,12 @@ char* PromptInput(const char* prompt, const char* defaultValue)
     return buffer;
 }
 
-void Hline()
+void hline()
 {
     printf("------------------------------------------------------- --- -> >\n");
 }
 
-socklen_t SockaddrLen(const struct sockaddr_any* addr)
+socklen_t sockaddrLen(const struct sockaddr_any* addr)
 {
     return addr->san_family == AF_INET ?
            sizeof(struct sockaddr_in) :

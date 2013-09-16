@@ -27,7 +27,7 @@
 #include "hex.h"
 #include "xtea.h"
 
-Config* Config_New()
+Config* Config_new()
 {
     Config* c = calloc(1, sizeof(Config));
     if (!c) { return NULL; }
@@ -43,7 +43,7 @@ Config* Config_New()
     return c;
 }
 
-void Config_Free(Config** cp)
+void Config_free(Config** cp)
 {
     if (*cp) {
         Config* c = *cp;
@@ -56,30 +56,60 @@ void Config_Free(Config** cp)
     }
 }
 
-bool Config_SanityCheck(Config* c)
+void invalidValueError(const char* option)
+{
+  fprintf(stderr, "Config option has invalid value: %s\n", option);
+}
+
+void requiredOptionError(const char* option)
+{
+  fprintf(stderr, "Config option is required: %s\n", option);
+}
+
+bool Config_sanityCheck(Config* c)
 {
     bool insane = false;
+    if (!isValidIP(c->listenIP)) {
+      invalidValueError("listenip");
+      insane = true;
+    }
+
     if (c->listenPort == -1) {
-        fprintf(stderr, "Config option is required: listenport\n");
+        requiredOptionError("listenport");
         insane = true;
+    }
+
+    if (!isValidPort(c->listenPort)) {
+      invalidValueError("listenport");
+      insane = true;
     }
 
     if (!c->remoteHost) {
-        fprintf(stderr, "Config option is required: remotehost\n");
+        requiredOptionError("remotehost");
         insane = true;
     }
 
+    if (!isValidHost(c->remoteHost)) {
+      invalidValueError("remotehost");
+      insane = true;
+    }
+
     if (c->remotePort == -1) {
-        fprintf(stderr, "Config option is required: remoteport\n");
+        requiredOptionError("remoteport");
         insane = true;
+    }
+
+    if (!isValidPort(c->remotePort)) {
+      invalidValueError("remoteport");
+      insane = true;
     }
 
     return !insane;
 }
 
-Config* Config_LoadBuffer(const char* buffer)
+Config* Config_loadBuffer(const char* buffer)
 {
-    Config* c = Config_New();
+    Config* c = Config_new();
     if (!c) {
         fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
         return NULL;
@@ -112,7 +142,7 @@ Config* Config_LoadBuffer(const char* buffer)
             if (!c->listenIP) { goto strduperror; }
         }
         else if (!strncasecmp(line, "listenport=", 11) && len > 11) {
-            if (StrToInt(line + 11, &c->listenPort) != 1 || c->listenPort < 0) {
+            if (strToInt(line + 11, &c->listenPort) != 1 || c->listenPort < 0) {
                 error = true;
             }
         }
@@ -121,7 +151,7 @@ Config* Config_LoadBuffer(const char* buffer)
             if (!c->remoteHost) { goto strduperror; }
         }
         else if (!strncasecmp(line, "remoteport=", 11) && len > 11) {
-            if (StrToInt(line + 11, &c->remotePort) != 1 || c->remotePort < 0) {
+            if (strToInt(line + 11, &c->remotePort) != 1 || c->remotePort < 0) {
                 error = true;
             }
         }
@@ -138,17 +168,17 @@ Config* Config_LoadBuffer(const char* buffer)
             }
         }
         else if (!strncasecmp(line, "identtimeout=", 13) && len > 13) {
-            if (StrToInt(line + 13, &c->identTimeout) != 1 || c->identTimeout < 0) {
+            if (strToInt(line + 13, &c->identTimeout) != 1 || c->identTimeout < 0) {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "idletimeout=", 12) && len > 12) {
-            if (StrToInt(line + 12, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
+            if (strToInt(line + 12, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "writetimeout=", 13) && len > 13) {
-            if (StrToInt(line + 13, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
+            if (strToInt(line + 13, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
                 error = true;
             }
         }
@@ -181,7 +211,7 @@ Config* Config_LoadBuffer(const char* buffer)
 
     if (error) {
         fprintf(stderr, "Error at line %i in config file.\n", lineNo);
-        Config_Free(&c);
+        Config_free(&c);
         return NULL;
     }
 
@@ -190,8 +220,8 @@ Config* Config_LoadBuffer(const char* buffer)
         if (!c->listenIP) { goto strduperror; }
     }
 
-    if (!Config_SanityCheck(c)) {
-        Config_Free(&c);
+    if (!Config_sanityCheck(c)) {
+        Config_free(&c);
         return NULL;
     }
 
@@ -200,11 +230,11 @@ Config* Config_LoadBuffer(const char* buffer)
 strduperror:
     fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
     free(line);
-    Config_Free(&c);
+    Config_free(&c);
     return NULL;
 }
 
-Config* Config_LoadFile(const char* path)
+Config* Config_loadFile(const char* path)
 {
     FILE* fp = fopen(path, "r");
     if (!fp) {
@@ -232,7 +262,7 @@ Config* Config_LoadFile(const char* path)
         return NULL;
     }
 
-    Config* c = Config_LoadBuffer(buffer);
+    Config* c = Config_loadBuffer(buffer);
     free(buffer);
 
     return c;
@@ -240,14 +270,14 @@ Config* Config_LoadFile(const char* path)
 
 #ifdef CONF_EMBEDDED
 
-char* Config_DecryptEmbedded(const char* key)
+char* Config_decryptEmbedded(const char* key)
 {
     size_t confLen = strlen(CONF_EMBEDDED);
     size_t cipherSize = confLen / 2 + 1;
     char* cipher = calloc(cipherSize, sizeof(char));
     if (!cipher) { return NULL; }
 
-    ssize_t cipherLen = HexDecode(CONF_EMBEDDED, confLen, cipher, cipherSize);
+    ssize_t cipherLen = hexDecode(CONF_EMBEDDED, confLen, cipher, cipherSize);
     if (cipherLen < XTEA_BLOCK_SIZE) {
         free(cipher);
         return NULL;
@@ -289,57 +319,57 @@ char* Config_DecryptEmbedded(const char* key)
     return plain;
 }
 
-Config* Config_LoadEmbedded(const char* key)
+Config* Config_loadEmbedded(const char* key)
 {
-    char* buffer = Config_DecryptEmbedded(key);
+    char* buffer = Config_decryptEmbedded(key);
     if (!buffer) {
         fprintf(stderr, "Error while decrypting embedded conf!\n");
         return NULL;
     }
 
-    Config* cfg = Config_LoadBuffer(buffer);
+    Config* cfg = Config_loadBuffer(buffer);
     free(buffer);
     return cfg;
 }
 
 #endif
 
-char* Config_SaveBuffer(Config* c)
+char* Config_saveBuffer(Config* c)
 {
-    char* buffer = Scatprintf(NULL, "listenip=%s\n", c->listenIP);
+    char* buffer = strCatPrintf(NULL, "listenip=%s\n", c->listenIP);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "listenport=%i\n", c->listenPort);
+    buffer = strCatPrintf(buffer, "listenport=%i\n", c->listenPort);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "remotehost=%s\n", c->remoteHost);
+    buffer = strCatPrintf(buffer, "remotehost=%s\n", c->remoteHost);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "remoteport=%i\n", c->remotePort);
+    buffer = strCatPrintf(buffer, "remoteport=%i\n", c->remotePort);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "idnt=%s\n", c->idnt ? "true" : "false");
+    buffer = strCatPrintf(buffer, "idnt=%s\n", c->idnt ? "true" : "false");
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "identtimeout=%i\n", c->identTimeout);
+    buffer = strCatPrintf(buffer, "identtimeout=%i\n", c->identTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "idletimeout=%i\n", c->idleTimeout);
+    buffer = strCatPrintf(buffer, "idletimeout=%i\n", c->idleTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "writetimeout=%i\n", c->writeTimeout);
+    buffer = strCatPrintf(buffer, "writetimeout=%i\n", c->writeTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "dnslookup=%s\n", c->dnsLookup ? "true" : "false");
+    buffer = strCatPrintf(buffer, "dnslookup=%s\n", c->dnsLookup ? "true" : "false");
     if (!buffer) { return NULL; }
 
     if (c->pidFile) {
-        buffer = Scatprintf(buffer, "pidfile=%s\n", c->pidFile);
+        buffer = strCatPrintf(buffer, "pidfile=%s\n", c->pidFile);
         if (!buffer) { return NULL; }
     }
 
     if (c->welcomeMsg) {
-        buffer = Scatprintf(buffer, "welcomemsg=%s\n", c->welcomeMsg);
+        buffer = strCatPrintf(buffer, "welcomemsg=%s\n", c->welcomeMsg);
         if (!buffer) { return NULL; }
     }
 

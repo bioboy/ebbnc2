@@ -58,17 +58,17 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    char* key = PromptInput("Password", NULL);
+    char* key = getpass("Password: ");
     if (*key == '\0') {
         fprintf(stderr, "Password is required to load embedded conf.\n");
         return 1;
     }
 #endif
 
-    Hline();
+    hline();
     printf("%s %s by %s\n", EBBNC_PROGRAM, EBBNC_VERSION, EBBNC_AUTHOR);
-    Hline();
-    atexit(Hline);
+    hline();
+    atexit(hline);
 
     printf("Initialising signals ..\n");
     InitialiseSignals();
@@ -76,42 +76,42 @@ int main(int argc, char** argv)
     printf("Loading config file ..\n");
 
 #ifndef CONF_EMBEDDED
-    Config* cfg = Config_LoadFile(argv[1]);
+    Config* cfg = Config_loadFile(argv[1]);
 #else
-    Config* cfg = Config_LoadEmbedded(key);
+    Config* cfg = Config_loadEmbedded(key);
 #endif
     if (!cfg) { return 1; }
 
     if (cfg->pidFile) {
         printf("Checking if bouncer already running ..\n");
-        int ret = AlreadyRunning(cfg->pidFile);
+        int ret = isAlreadyRunning(cfg->pidFile);
         if (ret < 0) {
             fprintf(stderr, "Unable to check if already running: %s\n", strerror(errno));
-            Config_Free(&cfg);
+            Config_free(&cfg);
             return 1;
         }
 
         if (ret != 0) {
             fprintf(stderr, "Bouncer already running!\n");
-            Config_Free(&cfg);
+            Config_free(&cfg);
             return 1;
         }
     }
 
     printf("Initialising listening socket ..\n");
-    Server* srv = Server_Listen(cfg);
+    Server* srv = Server_listen(cfg);
     if (!srv) {
-        Server_Free(&srv);
-        Config_Free(&cfg);
+        Server_free(&srv);
+        Config_free(&cfg);
         return 1;
     }
 
     printf("Forking into background ..\n");
-    pid_t pid = Daemonise();
+    pid_t pid = daemonise();
     if (pid < 0) {
         fprintf(stderr, "Failed to fork into background.\n");
-        Server_Free(&srv);
-        Config_Free(&cfg);
+        Server_free(&srv);
+        Config_free(&cfg);
         return 1;
     }
 
@@ -119,21 +119,22 @@ int main(int argc, char** argv)
         printf("Bouncer running as PID #%i\n", pid);
         if (cfg->pidFile) {
             printf("Creating PID file at %s ..\n", cfg->pidFile);
-            if (!CreatePIDFile(cfg->pidFile, pid)) {
+            if (!createPIDFile(cfg->pidFile, pid)) {
                 // this goes to /dev/null at the moment
                 // this error is not fatal
                 fprintf(stderr, "Failed to create PID file. This is only a warning.\n");
             }
         }
-        Hline();
+
+        hline();
         _exit(0);
     }
 
     printf("Waiting for connections ..\n");
-    Server_Loop(srv);
+    Server_loop(srv);
 
-    Server_Free(&srv);
-    Config_Free(&cfg);
+    Server_free(&srv);
+    Config_free(&cfg);
 
     return 0;
 

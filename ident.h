@@ -25,7 +25,7 @@
 
 #define IDENT_LEN 256
 
-bool IdentLookup(const struct sockaddr_any* localAddr,
+bool identLookup(const struct sockaddr_any* localAddr,
                  const struct sockaddr_any* peerAddr,
                  time_t timeout, char* user);
 

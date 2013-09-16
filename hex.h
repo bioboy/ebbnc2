@@ -20,7 +20,7 @@
 
 #include <sys/types.h>
 
-ssize_t HexEncode(const char* src, size_t srcLen, char* dst, size_t dstSize);
-ssize_t HexDecode(const char* src, size_t srcLen, char* dst, size_t dstSize);
+ssize_t hexEncode(const char* src, size_t srcLen, char* dst, size_t dstSize);
+ssize_t hexDecode(const char* src, size_t srcLen, char* dst, size_t dstSize);
 
 #endif

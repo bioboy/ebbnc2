@@ -20,25 +20,25 @@
 
 #include <stdbool.h>
 
-typedef struct Config {
-    char* listenIP;
-    int listenPort;
-    char* remoteHost;
-    int remotePort;
-    bool idnt;
-    int identTimeout;
-    int idleTimeout;
-    int writeTimeout;
-    bool dnsLookup;
-    char* pidFile;
-    char* welcomeMsg;
+typedef struct {
+    char*   listenIP;
+    int     listenPort;
+    char*   remoteHost;
+    int     remotePort;
+    bool    idnt;
+    int     identTimeout;
+    int     idleTimeout;
+    int     writeTimeout;
+    bool    dnsLookup;
+    char*   pidFile;
+    char*   welcomeMsg;
 } Config;
 
-Config* Config_New();
-Config* Config_LoadBuffer(const char* buffer);
-Config* Config_LoadFile(const char* path);
-Config* Config_LoadEmbedded(const char* key);
-char* Config_SaveBuffer(Config* c);
-void Config_Free(Config** cp);
+Config* Config_new();
+Config* Config_loadBuffer(const char* buffer);
+Config* Config_loadFile(const char* path);
+Config* Config_loadEmbedded(const char* key);
+char* Config_saveBuffer(Config* c);
+void Config_free(Config** cp);
 
 #endif

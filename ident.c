@@ -26,7 +26,7 @@
 
 #define IDENT_PORT      113
 
-bool IdentLookup(const struct sockaddr_any* localAddr,
+bool identLookup(const struct sockaddr_any* localAddr,
                  const struct sockaddr_any* peerAddr,
                  time_t timeout, char* user)
 {
@@ -46,10 +46,10 @@ bool IdentLookup(const struct sockaddr_any* localAddr,
     int sock = socket(addr.san_family, SOCK_STREAM, 0);
     if (sock < 0) { return false; }
 
-    SetReadTimeout(sock, timeout);
-    SetWriteTimeout(sock, timeout);
+    setReadTimeout(sock, timeout);
+    setWriteTimeout(sock, timeout);
 
-    if (connect(sock, &addr.sa, SockaddrLen(&addr)) < 0) { return false; }
+    if (connect(sock, &addr.sa, sockaddrLen(&addr)) < 0) { return false; }
 
     FILE* fp = fdopen(sock, "r+");
     if (!fp) {
@@ -57,8 +57,8 @@ bool IdentLookup(const struct sockaddr_any* localAddr,
         return false;
     }
 
-    int localPort = PortFromSockaddr(localAddr);
-    int remotePort = PortFromSockaddr(peerAddr);
+    int localPort = portFromSockaddr(localAddr);
+    int remotePort = portFromSockaddr(peerAddr);
 
     if (fprintf(fp, "%i, %i\r\n", remotePort, localPort) < 0) {
         fclose(fp);
