@@ -35,5 +35,5 @@ conf: $(CONF_OBJS)
 -include $(CONF_OBJS:.o=.d)
 
 clean:
-	@rm -f *.o *.d ebbnc conf.h
+	@rm -f *.o *.d ebbnc conf.h makeconf
 	
