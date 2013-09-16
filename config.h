@@ -23,7 +23,7 @@
 struct Config {
     char* listenIP;
     int listenPort;
-    char* remoteIP;
+    char* remoteHost;
     int remotePort;
     bool idnt;
     int identTimeout;

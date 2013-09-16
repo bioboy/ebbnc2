@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     enum Stage {
         StageListenIP,
         StageListenPort,
-        StageRemoteIP,
+        StageRemoteHost,
         StageRemotePort,
         StageIdnt,
         StageIdentTimeout,
@@ -158,15 +158,15 @@ int main(int argc, char** argv)
                 }
                 break;
             }
-            case StageRemoteIP : {
-                char* value = PromptInput("Remote ip", NULL);
+            case StageRemoteHost : {
+                char* value = PromptInput("Remote host/ip", NULL);
                 if (*value != '\0') {
-                    if (ValidIP(value)) {
-                        c->remoteIP = strdup(value);
-                        if (!c->remoteIP) { error = ErrorStrdup; }
+                    if (ValidHost(value)) {
+                        c->remoteHost = strdup(value);
+                        if (!c->remoteHost) { error = ErrorStrdup; }
                     }
                     else {
-                        error = ErrorValue;
+                      error = ErrorValue;
                     }
                 }
                 else {

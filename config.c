@@ -48,7 +48,7 @@ void Config_Free(struct Config** cp)
     if (*cp) {
         struct Config* c = *cp;
         free(c->listenIP);
-        free(c->remoteIP);
+        free(c->remoteHost);
         free(c->pidFile);
         free(c->welcomeMsg);
         free(c);
@@ -64,8 +64,8 @@ bool Config_SanityCheck(struct Config* c)
         insane = true;
     }
 
-    if (!c->remoteIP) {
-        fprintf(stderr, "Config option is required: remoteip\n");
+    if (!c->remoteHost) {
+        fprintf(stderr, "Config option is required: remotehost\n");
         insane = true;
     }
 
@@ -116,9 +116,9 @@ struct Config* Config_LoadBuffer(const char* buffer)
                 error = true;
             }
         }
-        else if (!strncasecmp(line, "remoteip=", 9) && len > 9) {
-            c->remoteIP = strdup(line + 9);
-            if (!c->remoteIP) { goto strduperror; }
+        else if (!strncasecmp(line, "remotehost=", 11) && len > 11) {
+            c->remoteHost = strdup(line + 11);
+            if (!c->remoteHost) { goto strduperror; }
         }
         else if (!strncasecmp(line, "remoteport=", 11) && len > 11) {
             if (StrToInt(line + 11, &c->remotePort) != 1 || c->remotePort < 0) {
@@ -312,7 +312,7 @@ char* Config_SaveBuffer(struct Config* c)
     buffer = Scatprintf(buffer, "listenport=%i\n", c->listenPort);
     if (!buffer) { return NULL; }
 
-    buffer = Scatprintf(buffer, "remoteip=%s\n", c->remoteIP);
+    buffer = Scatprintf(buffer, "remotehost=%s\n", c->remoteHost);
     if (!buffer) { return NULL; }
 
     buffer = Scatprintf(buffer, "remoteport=%i\n", c->remotePort);

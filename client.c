@@ -104,7 +104,7 @@ bool Client_Idnt(struct Client* c)
 
     char hostname[NI_MAXHOST];
     if (!c->cfg->dnsLookup ||
-        getnameinfo(&c->cAddr.sa, sizeof(c->cAddr), 
+        getnameinfo(&c->cAddr.sa, sizeof(c->cAddr),
                     hostname, sizeof(hostname), NULL, 0, 0) != 0) {
 
         strncpy(hostname, ip, sizeof(ip));
@@ -124,8 +124,21 @@ bool Client_Idnt(struct Client* c)
 
 bool Client_Connect(struct Client* c)
 {
-    if (!IPPortToSockaddr(c->cfg->remoteIP, c->cfg->remotePort, &c->rAddr)) {
-        Client_ErrnoReply(c, "IPPortToSockaddr", errno);
+    const char* errmsg = NULL;
+    if (!HostPortToSockaddr(c->cfg->remoteHost, c->cfg->remotePort, &c->rAddr, &errmsg)) {
+        if (!errmsg) {
+          Client_ErrnoReply(c, "HostPortToSockaddr", errno);
+          return false;
+        }
+
+        char* msg = Sprintf("HostPortToSockaddr: %s", errmsg);
+        if (!msg) {
+            perror("sprintf");
+            return false;
+        }
+
+        Client_ErrorReply(c, msg);
+        free(msg);
         return false;
     }
 
