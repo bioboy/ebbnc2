@@ -9,11 +9,16 @@ or an embedded encrypted config.
   1. Compile the bouncer by running 'make'.
   2. Edit ebbnc.conf to suit your needs.
   3. Run the bouncer './ebbnc ebbnc.conf'.
+  4. Added entry to crontab to start at boot:
+
+    @reboot /home/user/ebbnc/ebbnc /home/user/ebbnc/ebbnc.conf >/dev/null
   
 * Embedded encrypted config:
 
   1. Compile and run the conf editor tool by running 'make conf'.
   2. Compile the bouncer by running 'make'.
   3. Run the bouncer './ebbnc' (not ebbnc.conf argument).
+
+  Note: Crontab is unsupported with encrypted config.
 
 ------------------------------------------------------- --- -> >
