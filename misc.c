@@ -195,6 +195,7 @@ int isAlreadyRunning(const char* pidFile)
 
     pid_t pid;
     if (fscanf(fp, "%i", &pid) != 1) {
+        fclose(fp);
         errno = EINVAL;
         return -1;
     }
