@@ -1,5 +1,8 @@
 ebBMC Changelog - ebftpd team
 
+0.6b:
+* Fixed leaking socket in ident check when ident connect fails.
+
 0.5b:
 * Renamed remoteip config option to renamehost, also allowing hostnames.
 * Fixed bug in xtea encryption.

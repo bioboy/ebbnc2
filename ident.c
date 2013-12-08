@@ -49,7 +49,10 @@ bool identLookup(const struct sockaddr_any* localAddr,
     setReadTimeout(sock, timeout);
     setWriteTimeout(sock, timeout);
 
-    if (connect(sock, &addr.sa, sockaddrLen(&addr)) < 0) { return false; }
+    if (connect(sock, &addr.sa, sockaddrLen(&addr)) < 0) {
+      close(sock);
+      return false;
+    }
 
     FILE* fp = fdopen(sock, "r+");
     if (!fp) {
