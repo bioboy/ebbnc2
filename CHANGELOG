@@ -1,5 +1,8 @@
 ebBMC Changelog - ebftpd team
 
+0.7b:
+* Fixed inaccurate config parse error message.
+
 0.6b:
 * Fixed leaking socket in ident check when ident connect fails.
 
