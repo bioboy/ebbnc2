@@ -116,16 +116,14 @@ Config* Config_loadBuffer(const char* buffer)
     }
 
     bool error = false;
-    int lineNo = 0;
     const char* p1 = buffer;
     char* line = NULL;
     while (!error && *p1) {
-        ++lineNo;
         const char* p2 = p1;
         while (*p2 && *p2 != '\n' && *p2 != '\r') { p2++; }
 
         size_t len = p2 - p1;
-        char* line = strndup(p1, len);
+        line = strndup(p1, len);
         if (!line) { goto strduperror; }
 
         while (*p2 == '\r' || *p2 == '\n') { p2++; }
@@ -206,11 +204,15 @@ Config* Config_loadBuffer(const char* buffer)
             error = true;
         }
 
-        free(line);
+        if (!error) {
+            free(line);
+            line = NULL;
+        }
     }
 
     if (error) {
-        fprintf(stderr, "Error at line %i in config file.\n", lineNo);
+        fprintf(stderr, "Error on this line in config file: %s\n", line);
+        free(line);
         Config_free(&c);
         return NULL;
     }
