@@ -254,9 +254,19 @@ void setWriteTimeout(int sock, time_t timeout)
 
 bool strToInt(const char* s, int* i)
 {
+    long value;
+    bool result = strToLong(s, &value);
+    if (result) {
+        *i = (int) value;
+        return true;
+    }
+    return false;
+}
+
+bool strToLong(const char* s, long* i)
+{
     char* p;
-    long value = strtol(s, &p, 10);
-    *i = (int) value;
+    *i = strtol(s, &p, 10);
     return *p == '\0';
 }
 

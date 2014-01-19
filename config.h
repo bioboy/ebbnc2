@@ -20,25 +20,34 @@
 
 #include <stdbool.h>
 
+typedef struct Bouncer {
+    char*           listenIP;
+    long            listenPort;
+    char*           remoteHost;
+    long            remotePort;
+    struct Bouncer* next;
+} Bouncer;
+
 typedef struct {
-    char*   listenIP;
-    int     listenPort;
-    char*   remoteHost;
-    int     remotePort;
-    bool    idnt;
-    int     identTimeout;
-    int     idleTimeout;
-    int     writeTimeout;
-    bool    dnsLookup;
-    char*   pidFile;
-    char*   welcomeMsg;
+    Bouncer*    bouncers;
+    bool        idnt;
+    int         identTimeout;
+    int         idleTimeout;
+    int         writeTimeout;
+    bool        dnsLookup;
+    char*       pidFile;
+    char*       welcomeMsg;
 } Config;
+
+Bouncer* Bouncer_new();
+void Bouncer_free(Bouncer** bouncerp);
+void Bouncer_freeList(Bouncer** bouncerp);
 
 Config* Config_new();
 Config* Config_loadBuffer(const char* buffer);
 Config* Config_loadFile(const char* path);
 Config* Config_loadEmbedded(const char* key);
-char* Config_saveBuffer(Config* c);
-void Config_free(Config** cp);
+char* Config_saveBuffer(Config* config);
+void Config_free(Config** configp);
 
 #endif

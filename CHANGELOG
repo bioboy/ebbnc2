@@ -1,5 +1,9 @@
 ebBMC Changelog - ebftpd team
 
+0.8b:
+* Added support for multiple bouncers in single instance.
+* Tidied up code readability.
+
 0.7b:
 * Fixed inaccurate config parse error message.
 

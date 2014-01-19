@@ -52,6 +52,7 @@ int daemonise();
 void setReadTimeout(int sock, time_t timeout);
 void setWriteTimeout(int sock, time_t timeout);
 bool strToInt(const char* s, int* i);
+bool strToLong(const char* s, long* i);
 char* promptInput(const char* prompt, const char* defaultValue);
 void hline();
 socklen_t sockaddrLen(const struct sockaddr_any* addr);

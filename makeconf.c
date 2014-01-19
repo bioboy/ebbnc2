@@ -91,10 +91,10 @@ bool saveHeader(const char* buffer)
 int main(int argc, char** argv)
 {
     enum Stage {
-        STAGE_LISTEN_IP,
-        STAGE_LISTEN_PORT,
-        STAGE_REMOTE_HOST,
-        STAGE_REMOTE_PORT,
+        STAGE_BOUNCER_NEXT,
+        STAGE_BOUNCER_LISTEN,
+        STAGE_BOUNCER_REMOTE,
+        STAGE_BOUNCER_ANOTHER,
         STAGE_IDNT,
         STAGE_IDENT_TIMEOUT,
         STAGE_IDLE_TIMEOUT,
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
         STAGE_WELCOME_MSG,
         STAGE_PASSWORD
 
-    } stage = STAGE_LISTEN_IP;
+    } stage = STAGE_BOUNCER_LISTEN;
 
     enum Error {
         ERROR_NONE,
@@ -120,11 +120,15 @@ int main(int argc, char** argv)
     hline();
     atexit(hline);
 
-    Config* c = Config_new();
-    if (!c) {
+    Config* config = Config_new();
+    if (!config) {
         fprintf(stderr, "Unable to create config: %s\n", strerror(errno));
         return 1;
     }
+
+    unsigned int bouncerCount = 1;
+    printf("Bouncer #%u -\n", bouncerCount);
+    Bouncer* bouncer = Bouncer_new();
 
     char key[17] = { 0 };
     bool done = false;
@@ -133,64 +137,79 @@ int main(int argc, char** argv)
 
         error = ERROR_NONE;
         switch (stage) {
-            case STAGE_LISTEN_IP : {
-                char* value = promptInput("Listen ip", "0.0.0.0");
-                if (isValidIP(value)) {
-                    c->listenIP = strdup(value);
-                    if (!c->listenIP) { error = ERROR_STRDUP; }
+            case STAGE_BOUNCER_LISTEN : {
+                char* value = promptInput("Listen ip:port", NULL);
+
+                char* p = strtok(value, ":");
+                if (p && isValidIP(p)) {
+                    bouncer->listenIP = strdup(p);
+                    if (!bouncer->listenIP) { error = ERROR_STRDUP; }
+                }
+                else {
+                    error = ERROR_VALUE;
+                    break;
+                }
+
+                p = strtok(NULL, " ");
+                if (!p || strToLong(p, &bouncer->listenPort) != 1 || !isValidPort(bouncer->listenPort)) {
+                    error = ERROR_VALUE;
+                    free(bouncer->listenIP);
+                    bouncer->listenIP = NULL;
+                    error = ERROR_VALUE;
+                }
+
+                break;
+            }
+            case STAGE_BOUNCER_REMOTE : {
+                char* value = promptInput("Remote host:port", NULL);
+
+                char* p = strtok(value, ":");
+                if (p && isValidHost(p)) {
+                    bouncer->remoteHost = strdup(p);
+                    if (!bouncer->remoteHost) { error = ERROR_STRDUP; }
+                }
+                else {
+                    error = ERROR_VALUE;
+                    break;
+                }
+
+                p = strtok(NULL, " ");
+                if (!p || strToLong(p, &bouncer->remotePort) != 1 || !isValidPort(bouncer->remotePort)) {
+                    error = ERROR_VALUE;
+                    free(bouncer->remoteHost);
+                    bouncer->remoteHost = NULL;
+                    error = ERROR_VALUE;
+                }
+
+                break;
+            }
+            case STAGE_BOUNCER_ANOTHER : {
+                bouncer->next = config->bouncers;
+                config->bouncers = bouncer;
+                printf("push %li\n", bouncer->listenPort);
+                bouncer = NULL;
+
+                char* value = promptInput("Another bouncer?", "yes");
+                if (!strcasecmp(value, "yes")) {
+                    stage = STAGE_BOUNCER_NEXT;
+                    printf("Bouncer #%u -\n", ++bouncerCount);
+                    bouncer = Bouncer_new();
+                }
+                else if (!strcasecmp(value, "no")) {
+                    stage++;
                 }
                 else {
                     error = ERROR_VALUE;
                 }
                 break;
             }
-            case STAGE_LISTEN_PORT : {
-                char* value = promptInput("Listen port", NULL);
-                if (*value != '\0') {
-                    if (strToInt(value, &c->listenPort) != 1 || !isValidPort(c->listenPort)) {
-                        error = ERROR_VALUE;
-                    }
-                }
-                else {
-                    error = ERROR_DEFAULT;
-                }
-                break;
-            }
-            case STAGE_REMOTE_HOST : {
-                char* value = promptInput("Remote host/ip", NULL);
-                if (*value != '\0') {
-                    if (isValidHost(value)) {
-                        c->remoteHost = strdup(value);
-                        if (!c->remoteHost) { error = ERROR_STRDUP; }
-                    }
-                    else {
-                      error = ERROR_VALUE;
-                    }
-                }
-                else {
-                    error = ERROR_DEFAULT;
-                }
-                break;
-            }
-            case STAGE_REMOTE_PORT : {
-                char* value = promptInput("Remote port", NULL);
-                if (*value != '\0') {
-                    if (strToInt(value, &c->remotePort) != 1 || !isValidPort(c->remotePort)) {
-                        error = ERROR_VALUE;
-                    }
-                }
-                else {
-                    error = ERROR_DEFAULT;
-                }
-                break;
-            }
             case STAGE_IDNT : {
                 char* value = promptInput("Send idnt", "true");
                 if (!strcasecmp(value, "true")) {
-                    c->idnt = true;
+                    config->idnt = true;
                 }
                 else if (!strcasecmp(value, "false")) {
-                    c->idnt = false;
+                    config->idnt = false;
                 }
                 else {
                     error = ERROR_VALUE;
@@ -198,11 +217,11 @@ int main(int argc, char** argv)
                 break;
             }
             case STAGE_IDENT_TIMEOUT : {
-                if (!c->idnt) { break; }
+                if (!config->idnt) { break; }
 
                 char* value = promptInput("Ident timeout", "10");
                 if (*value != '\0') {
-                    if (strToInt(value, &c->identTimeout) != 1 || c->identTimeout < 0) {
+                    if (strToInt(value, &config->identTimeout) != 1 || config->identTimeout < 0) {
                         error = ERROR_VALUE;
                     }
                 }
@@ -214,7 +233,7 @@ int main(int argc, char** argv)
             case STAGE_IDLE_TIMEOUT : {
                 char* value = promptInput("Idle timeout", "0");
                 if (*value != '\0') {
-                    if (strToInt(value, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
+                    if (strToInt(value, &config->idleTimeout) != 1 || config->idleTimeout < 0) {
                         error = ERROR_VALUE;
                     }
                 }
@@ -226,7 +245,7 @@ int main(int argc, char** argv)
             case STAGE_WRITE_TIMEOUT : {
                 char* value = promptInput("Write timeout", "30");
                 if (*value != '\0') {
-                    if (strToInt(value, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
+                    if (strToInt(value, &config->writeTimeout) != 1 || config->writeTimeout < 0) {
                         error = ERROR_VALUE;
                     }
                 }
@@ -238,10 +257,10 @@ int main(int argc, char** argv)
             case STAGE_DNS_LOOKUP : {
                 char* value = promptInput("Dns lookup", "true");
                 if (!strcasecmp(value, "true")) {
-                    c->dnsLookup = true;
+                    config->dnsLookup = true;
                 }
                 else if (!strcasecmp(value, "false")) {
-                    c->dnsLookup = false;
+                    config->dnsLookup = false;
                 }
                 else {
                     error = ERROR_VALUE;
@@ -251,16 +270,16 @@ int main(int argc, char** argv)
             case STAGE_PID_FILE : {
                 char* value = promptInput("Pid file path", "none");
                 if (strcmp(value, "none")) {
-                    c->pidFile = strdup(value);
-                    if (!c->pidFile) { error = ERROR_STRDUP; }
+                    config->pidFile = strdup(value);
+                    if (!config->pidFile) { error = ERROR_STRDUP; }
                 }
                 break;
             }
             case STAGE_WELCOME_MSG : {
                 char* value = promptInput("Welcome message", "none");
                 if (strcmp(value, "none")) {
-                    c->welcomeMsg = strdup(value);
-                    if (!c->welcomeMsg) { error = ERROR_STRDUP; }
+                    config->welcomeMsg = strdup(value);
+                    if (!config->welcomeMsg) { error = ERROR_STRDUP; }
                 }
                 break;
             }
@@ -302,7 +321,7 @@ int main(int argc, char** argv)
     }
 
     if (error != ERROR_NONE) {
-        Config_free(&c);
+        Config_free(&config);
         return 1;
     }
 
@@ -310,8 +329,8 @@ int main(int argc, char** argv)
 
     printf("Serializing config to buffer ..\n");
 
-    char* plain = Config_saveBuffer(c);
-    Config_free(&c);
+   char* plain = Config_saveBuffer(config);
+    Config_free(&config);
 
     if (!plain) {
         fprintf(stderr, "Failed to serialize config to buffer: %s\n", strerror(errno));

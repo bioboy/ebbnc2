@@ -32,10 +32,11 @@ typedef struct {
     struct sockaddr_any cAddr;
     int                 rSock;
     struct sockaddr_any rAddr;
-    Config*             cfg;
-    Server*             srv;
+    Config*             config;
+    Bouncer*            bouncer;
+    Server*             server;
 } Client;
 
-void Client_launch(Server* srv, int sock, const struct sockaddr_any* addr);
+void Client_launch(Server* server, int sock, const struct sockaddr_any* addr);
 
 #endif

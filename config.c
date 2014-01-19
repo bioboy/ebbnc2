@@ -27,32 +27,112 @@
 #include "hex.h"
 #include "xtea.h"
 
-Config* Config_new()
+Bouncer* Bouncer_new()
 {
-    Config* c = calloc(1, sizeof(Config));
-    if (!c) { return NULL; }
+    Bouncer* bouncer = calloc(1, sizeof(Bouncer));
+    if (!bouncer) { return NULL; }
 
-    c->listenPort = -1;
-    c->remotePort = -1;
-    c->idnt = true;
-    c->identTimeout = 10;
-    c->idleTimeout = 0;
-    c->writeTimeout = 30;
-    c->dnsLookup = true;
+    bouncer->listenPort = -1;
+    bouncer->remotePort = -1;
 
-    return c;
+    return bouncer;
 }
 
-void Config_free(Config** cp)
+void Bouncer_free(Bouncer** bouncerp)
 {
-    if (*cp) {
-        Config* c = *cp;
-        free(c->listenIP);
-        free(c->remoteHost);
-        free(c->pidFile);
-        free(c->welcomeMsg);
-        free(c);
-        *cp = NULL;
+    if (*bouncerp) {
+        Bouncer* bouncer = *bouncerp;
+        free(bouncer->listenIP);
+        free(bouncer->remoteHost);
+        free(bouncer);
+        *bouncerp = NULL;
+    }
+}
+
+void Bouncer_freeList(Bouncer** bouncerp)
+{
+    if (*bouncerp) {
+        Bouncer* bouncer = *bouncerp;
+        while (bouncer->next) {
+            Bouncer* temp = bouncer->next->next;
+            Bouncer_free(&bouncer->next);
+            bouncer->next = temp;
+        }
+        Bouncer_free(&bouncer);
+        *bouncerp = NULL;
+    }
+}
+
+Bouncer* Bouncer_parse(const char* s)
+{
+    Bouncer* bouncer = Bouncer_new();
+
+    char* temp = strdup(s);
+    if (!temp) { goto strduperror; }
+
+    char* p = strtok(temp, ":");
+    if (!p || *p == '\0') { goto parseerror; }
+
+    bouncer->listenIP = strdup(p);
+    if (!bouncer->listenIP) { goto strduperror; }
+
+    p = strtok(NULL, " ");
+    if (!p || *p == '\0') { goto parseerror; }
+
+    if (sscanf(p, "%li", &bouncer->listenPort) != 1) { goto parseerror; }
+
+    p = strtok(NULL, ":");
+    if (!p || *p == '\0') { goto parseerror; }
+
+    bouncer->remoteHost = strdup(p);
+    if (!bouncer->remoteHost) { goto strduperror; }
+
+    p = strtok(NULL, " ");
+    if (!p || *p == '\0') { goto parseerror; }
+
+    if (sscanf(p, "%li", &bouncer->remotePort) != 1) { goto parseerror; }
+
+    p = strtok(p, " ");
+    if (p && *p == '\0') { goto parseerror; }
+
+    free(temp);
+    return bouncer;
+
+strduperror:
+    free(temp);
+    Bouncer_free(&bouncer);
+    errno = ENOMEM;
+    return NULL;
+
+parseerror:
+    free(temp);
+    Bouncer_free(&bouncer);
+    errno = 0;
+    return NULL;
+}
+
+Config* Config_new()
+{
+    Config* config = calloc(1, sizeof(Config));
+    if (!config) { return NULL; }
+
+    config->idnt = true;
+    config->identTimeout = 10;
+    config->idleTimeout = 0;
+    config->writeTimeout = 30;
+    config->dnsLookup = true;
+
+    return config;
+}
+
+void Config_free(Config** configp)
+{
+    if (*configp) {
+        Config* config = *configp;
+        free(config->pidFile);
+        free(config->welcomeMsg);
+        free(config);
+        *configp = NULL;
     }
 }
 
@@ -66,51 +146,54 @@ void requiredOptionError(const char* option)
   fprintf(stderr, "Config option is required: %s\n", option);
 }
 
-bool Config_sanityCheck(Config* c)
+bool Config_sanityCheck(Config* config)
 {
     bool insane = false;
-    if (!isValidIP(c->listenIP)) {
-      invalidValueError("listenip");
-      insane = true;
-    }
 
-    if (c->listenPort == -1) {
-        requiredOptionError("listenport");
+    if (!config->bouncers) {
+        requiredOptionError("bouncer");
         insane = true;
     }
+    else {
+        Bouncer* bouncer = config->bouncers;
+        while (bouncer && !insane) {
+            if (!isValidIP(bouncer->listenIP)) {
+              invalidValueError("listenip");
+              insane = true;
+            }
 
-    if (!isValidPort(c->listenPort)) {
-      invalidValueError("listenport");
-      insane = true;
+            if (!isValidPort(bouncer->listenPort)) {
+              invalidValueError("listenport");
+              insane = true;
+            }
+
+            if (!bouncer->remoteHost) {
+                requiredOptionError("remotehost");
+                insane = true;
+            }
+
+            if (!isValidHost(bouncer->remoteHost)) {
+              invalidValueError("remotehost");
+              insane = true;
+            }
+
+            if (!isValidPort(bouncer->remotePort)) {
+              invalidValueError("remoteport");
+              insane = true;
+            }
+
+            bouncer = bouncer->next;
+        }
     }
 
-    if (!c->remoteHost) {
-        requiredOptionError("remotehost");
-        insane = true;
-    }
-
-    if (!isValidHost(c->remoteHost)) {
-      invalidValueError("remotehost");
-      insane = true;
-    }
-
-    if (c->remotePort == -1) {
-        requiredOptionError("remoteport");
-        insane = true;
-    }
-
-    if (!isValidPort(c->remotePort)) {
-      invalidValueError("remoteport");
-      insane = true;
-    }
 
     return !insane;
 }
 
 Config* Config_loadBuffer(const char* buffer)
 {
-    Config* c = Config_new();
-    if (!c) {
+    Config* config = Config_new();
+    if (!config) {
         fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
         return NULL;
     }
@@ -135,70 +218,67 @@ Config* Config_loadBuffer(const char* buffer)
             continue;
         }
 
-        if (!strncasecmp(line, "listenip=", 9) && len > 9) {
-            c->listenIP = strdup(line + 9);
-            if (!c->listenIP) { goto strduperror; }
-        }
-        else if (!strncasecmp(line, "listenport=", 11) && len > 11) {
-            if (strToInt(line + 11, &c->listenPort) != 1 || c->listenPort < 0) {
-                error = true;
+        if (!strncasecmp(line, "bouncer=", 8) && len > 8) {
+            Bouncer* bouncer = Bouncer_parse(line + 8);
+            if (!bouncer) {
+                if (errno == ENOMEM) {
+                    goto strduperror;
+                }
+                else {
+                    error = true;
+                }
             }
-        }
-        else if (!strncasecmp(line, "remotehost=", 11) && len > 11) {
-            c->remoteHost = strdup(line + 11);
-            if (!c->remoteHost) { goto strduperror; }
-        }
-        else if (!strncasecmp(line, "remoteport=", 11) && len > 11) {
-            if (strToInt(line + 11, &c->remotePort) != 1 || c->remotePort < 0) {
-                error = true;
+            else {
+                bouncer->next = config->bouncers;
+                config->bouncers = bouncer;
             }
         }
         else if (!strncasecmp(line, "idnt=", 5)) {
             char* value = line + 5;
             if (!strcasecmp(value, "true")) {
-                c->idnt = true;
+                config->idnt = true;
             }
             else if (!strcasecmp(value, "false")) {
-                c->idnt = false;
+                config->idnt = false;
             }
             else {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "identtimeout=", 13) && len > 13) {
-            if (strToInt(line + 13, &c->identTimeout) != 1 || c->identTimeout < 0) {
+            if (strToInt(line + 13, &config->identTimeout) != 1 || config->identTimeout < 0) {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "idletimeout=", 12) && len > 12) {
-            if (strToInt(line + 12, &c->idleTimeout) != 1 || c->idleTimeout < 0) {
+            if (strToInt(line + 12, &config->idleTimeout) != 1 || config->idleTimeout < 0) {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "writetimeout=", 13) && len > 13) {
-            if (strToInt(line + 13, &c->writeTimeout) != 1 || c->writeTimeout < 0) {
+            if (strToInt(line + 13, &config->writeTimeout) != 1 || config->writeTimeout < 0) {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "dnslookup=", 10) && len > 10) {
             char* value = line + 10;
             if (!strcasecmp(value, "true")) {
-                c->dnsLookup = true;
+                config->dnsLookup = true;
             }
             else if (!strcasecmp(value, "false")) {
-                c->dnsLookup = false;
+                config->dnsLookup = false;
             }
             else {
                 error = true;
             }
         }
         else if (!strncasecmp(line, "pidfile=", 8) && len > 8) {
-            c->pidFile = strdup(line + 8);
-            if (!c->pidFile) { goto strduperror; }
+            config->pidFile = strdup(line + 8);
+            if (!config->pidFile) { goto strduperror; }
         }
         else if (!strncasecmp(line, "welcomemsg=", 11) && len > 11) {
-            c->welcomeMsg = strdup(line + 11);
-            if (!c->welcomeMsg) { goto strduperror; }
+            config->welcomeMsg = strdup(line + 11);
+            if (!config->welcomeMsg) { goto strduperror; }
         }
         else {
             error = true;
@@ -213,26 +293,21 @@ Config* Config_loadBuffer(const char* buffer)
     if (error) {
         fprintf(stderr, "Error on this line in config file: %s\n", line);
         free(line);
-        Config_free(&c);
+        Config_free(&config);
         return NULL;
     }
 
-    if (!c->listenIP) {
-        c->listenIP = strdup("0.0.0.0");
-        if (!c->listenIP) { goto strduperror; }
-    }
-
-    if (!Config_sanityCheck(c)) {
-        Config_free(&c);
+    if (!Config_sanityCheck(config)) {
+        Config_free(&config);
         return NULL;
     }
 
-    return c;
+    return config;
 
 strduperror:
     fprintf(stderr, "Unable to load config: %s\n", strerror(errno));
     free(line);
-    Config_free(&c);
+    Config_free(&config);
     return NULL;
 }
 
@@ -264,10 +339,10 @@ Config* Config_loadFile(const char* path)
         return NULL;
     }
 
-    Config* c = Config_loadBuffer(buffer);
+    Config* config = Config_loadBuffer(buffer);
     free(buffer);
 
-    return c;
+    return config;
 }
 
 #ifdef CONF_EMBEDDED
@@ -329,50 +404,46 @@ Config* Config_loadEmbedded(const char* key)
         return NULL;
     }
 
-    Config* cfg = Config_loadBuffer(buffer);
+    Config* config = Config_loadBuffer(buffer);
     free(buffer);
-    return cfg;
+    return config;
 }
 
 #endif
 
-char* Config_saveBuffer(Config* c)
+char* Config_saveBuffer(Config* config)
 {
-    char* buffer = strCatPrintf(NULL, "listenip=%s\n", c->listenIP);
+    char* buffer = strCatPrintf(NULL, "idnt=%s\n", config->idnt ? "true" : "false");
     if (!buffer) { return NULL; }
 
-    buffer = strCatPrintf(buffer, "listenport=%i\n", c->listenPort);
+    buffer = strCatPrintf(buffer, "identtimeout=%i\n", config->identTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = strCatPrintf(buffer, "remotehost=%s\n", c->remoteHost);
+    buffer = strCatPrintf(buffer, "idletimeout=%i\n", config->idleTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = strCatPrintf(buffer, "remoteport=%i\n", c->remotePort);
+    buffer = strCatPrintf(buffer, "writetimeout=%i\n", config->writeTimeout);
     if (!buffer) { return NULL; }
 
-    buffer = strCatPrintf(buffer, "idnt=%s\n", c->idnt ? "true" : "false");
+    buffer = strCatPrintf(buffer, "dnslookup=%s\n", config->dnsLookup ? "true" : "false");
     if (!buffer) { return NULL; }
 
-    buffer = strCatPrintf(buffer, "identtimeout=%i\n", c->identTimeout);
-    if (!buffer) { return NULL; }
-
-    buffer = strCatPrintf(buffer, "idletimeout=%i\n", c->idleTimeout);
-    if (!buffer) { return NULL; }
-
-    buffer = strCatPrintf(buffer, "writetimeout=%i\n", c->writeTimeout);
-    if (!buffer) { return NULL; }
-
-    buffer = strCatPrintf(buffer, "dnslookup=%s\n", c->dnsLookup ? "true" : "false");
-    if (!buffer) { return NULL; }
-
-    if (c->pidFile) {
-        buffer = strCatPrintf(buffer, "pidfile=%s\n", c->pidFile);
+    if (config->pidFile) {
+        buffer = strCatPrintf(buffer, "pidfile=%s\n", config->pidFile);
         if (!buffer) { return NULL; }
     }
 
-    if (c->welcomeMsg) {
-        buffer = strCatPrintf(buffer, "welcomemsg=%s\n", c->welcomeMsg);
+    if (config->welcomeMsg) {
+        buffer = strCatPrintf(buffer, "welcomemsg=%s\n", config->welcomeMsg);
         if (!buffer) { return NULL; }
+    }
+
+    Bouncer* bouncer = config->bouncers;
+    while (bouncer) {
+        buffer = strCatPrintf(buffer, "bouncer=%s:%i %s:%i\n", bouncer->listenIP, bouncer->listenPort,
+                                                               bouncer->remoteHost, bouncer->remotePort);
+        if (!buffer) { return NULL; }
+        bouncer = bouncer->next;
     }
 
     return buffer;

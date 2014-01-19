@@ -1,6 +1,6 @@
-CFLAGS := -O3 -Wall -Wextra
+CFLAGS := -O3 -Wall -Wextra -Wfatal-errors
 LIBS := -lpthread
-EBBNC_OBJS := main.o server.o client.o config.o misc.o ident.o xtea.o hex.o
+EBBNC_OBJS := main.o config.o server.o client.o misc.o ident.o xtea.o hex.o
 CONF_OBJS := makeconf.o config.o misc.o hex.o xtea.o
 
 ifeq ($(wildcard conf.h),)
@@ -36,4 +36,4 @@ conf: $(CONF_OBJS)
 
 clean:
 	@rm -f *.o *.d ebbnc conf.h makeconf
-	
+

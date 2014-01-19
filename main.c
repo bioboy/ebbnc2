@@ -76,33 +76,32 @@ int main(int argc, char** argv)
     printf("Loading config file ..\n");
 
 #ifndef CONF_EMBEDDED
-    Config* cfg = Config_loadFile(argv[1]);
+    Config* config = Config_loadFile(argv[1]);
 #else
-    Config* cfg = Config_loadEmbedded(key);
+    Config* config = Config_loadEmbedded(key);
 #endif
-    if (!cfg) { return 1; }
+    if (!config) { return 1; }
 
-    if (cfg->pidFile) {
+    if (config->pidFile) {
         printf("Checking if bouncer already running ..\n");
-        int ret = isAlreadyRunning(cfg->pidFile);
+        int ret = isAlreadyRunning(config->pidFile);
         if (ret < 0) {
             fprintf(stderr, "Unable to check if already running: %s\n", strerror(errno));
-            Config_free(&cfg);
+            Config_free(&config);
             return 1;
         }
 
         if (ret != 0) {
             fprintf(stderr, "Bouncer already running!\n");
-            Config_free(&cfg);
+            Config_free(&config);
             return 1;
         }
     }
 
-    printf("Initialising listening socket ..\n");
-    Server* srv = Server_listen(cfg);
-    if (!srv) {
-        Server_free(&srv);
-        Config_free(&cfg);
+    printf("Initialising listening sockets ..\n");
+    Server* servers = Server_listenAll(config);
+    if (!servers) {
+        Config_free(&config);
         return 1;
     }
 
@@ -110,16 +109,16 @@ int main(int argc, char** argv)
     pid_t pid = daemonise();
     if (pid < 0) {
         fprintf(stderr, "Failed to fork into background.\n");
-        Server_free(&srv);
-        Config_free(&cfg);
+        Server_freeList(&servers);
+        Config_free(&config);
         return 1;
     }
 
     if (pid > 0) {
         printf("Bouncer running as PID #%i\n", pid);
-        if (cfg->pidFile) {
-            printf("Creating PID file at %s ..\n", cfg->pidFile);
-            if (!createPIDFile(cfg->pidFile, pid)) {
+        if (config->pidFile) {
+            printf("Creating PID file at %s ..\n", config->pidFile);
+            if (!createPIDFile(config->pidFile, pid)) {
                 // this goes to /dev/null at the moment
                 // this error is not fatal
                 fprintf(stderr, "Failed to create PID file. This is only a warning.\n");
@@ -131,10 +130,10 @@ int main(int argc, char** argv)
     }
 
     printf("Waiting for connections ..\n");
-    Server_loop(srv);
+    Server_loop(servers);
 
-    Server_free(&srv);
-    Config_free(&cfg);
+    Server_freeList(&servers);
+    Config_free(&config);
 
     return 0;
 

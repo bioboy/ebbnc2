@@ -21,54 +21,69 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <sys/select.h>
 #include "misc.h"
 #include "server.h"
 #include "client.h"
 
 Server* Server_new()
 {
-    Server* s = calloc(1, sizeof(Server));
-    if (!s) { return NULL; }
+    Server* server = calloc(1, sizeof(Server));
+    if (!server) { return NULL; }
 
-    s->sock = -1;
+    server->sock = -1;
 
-    return s;
+    return server;
 }
 
-void Server_free(Server** sp)
+void Server_free(Server** serverp)
 {
-    if (*sp) {
-        Server* s = *sp;
-        if (s->sock >= 0) { close(s->sock); }
-        free(s);
-        *sp = NULL;
+    if (*serverp) {
+        Server* server = *serverp;
+        if (server->sock >= 0) { close(server->sock); }
+        free(server);
+        *serverp = NULL;
     }
 }
 
-bool Server_listen2(Server* s, const char* ip, int port)
+void Server_freeList(Server** serverp)
 {
-    if (!ipPortToSockaddr(ip, port, &s->addr)) {
+    if (*serverp) {
+        Server* server = *serverp;
+        while (server->next) {
+            Server* temp = server->next->next;
+            Server_free(&server->next);
+            server->next = temp;
+        }
+        Server_free(&server);
+        *serverp = NULL;
+    }
+}
+
+bool Server_listen2(Server* server, const char* ip, int port)
+{
+    if (!ipPortToSockaddr(ip, port, &server->addr)) {
         fprintf(stderr, "Invalid listenip.\n");
         return false;
     }
 
-    s->sock = socket(s->addr.san_family, SOCK_STREAM, 0);
-    if (s->sock < 0) {
+    server->sock = socket(server->addr.san_family, SOCK_STREAM, 0);
+    if (server->sock < 0) {
         perror("socket");
         return false;
     }
 
     {
         int optval = 1;
-        setsockopt(s->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+        setsockopt(server->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     }
 
-    if (bind(s->sock, &s->addr.sa, sockaddrLen(&s->addr)) < 0) {
+    if (bind(server->sock, &server->addr.sa, sockaddrLen(&server->addr)) < 0) {
         perror("bind");
         return false;
     }
 
-    if (listen(s->sock, SOMAXCONN) < 0) {
+    if (listen(server->sock, SOMAXCONN) < 0) {
         perror("listen");
         return false;
     }
@@ -76,39 +91,85 @@ bool Server_listen2(Server* s, const char* ip, int port)
     return true;
 }
 
-Server* Server_listen(Config* cfg)
+Server* Server_listen(Config* config, Bouncer* bouncer)
 {
-    Server* s = Server_new();
-    if (!s) {
+    printf("Bouncing from %s:%li to %s:%li!\n", bouncer->listenIP, bouncer->listenPort,
+                                                bouncer->remoteHost, bouncer->remotePort);
+
+    Server* server = Server_new();
+    if (!server) {
         perror("Server_new");
         return NULL;
     }
 
-    s->cfg = cfg;
-    if (!Server_listen2(s, cfg->listenIP, cfg->listenPort)) {
-        Server_free(&s);
+    server->config = config;
+    server->bouncer = bouncer;
+    if (!Server_listen2(server, bouncer->listenIP, bouncer->listenPort)) {
+        Server_free(&server);
         return NULL;
     }
 
-    return s;
+    return server;
 }
 
-void Server_accept(Server* s)
+Server* Server_listenAll(Config* config)
 {
-    struct sockaddr_any addr;
-    socklen_t len = sizeof(addr);
-    int sock = accept(s->sock, &addr.sa, &len);
-    if (sock < 0) {
-        perror("accept");
+    Server* servers = NULL;
+    Bouncer* bouncer = config->bouncers;
+    while (bouncer) {
+        Server* server = Server_listen(config, bouncer);
+        if (!server) {
+            Server_freeList(&servers);
+            return NULL;
+        }
+
+        server->next = servers;
+        servers = server;
+
+        bouncer = bouncer->next;
+    }
+    return servers;
+}
+
+void Server_accept(Server* servers)
+{
+    int max = 0;
+    fd_set set;
+    FD_ZERO(&set);
+    Server* server = servers;
+    while (server) {
+        FD_SET(server->sock, &set);
+        max = server->sock > max ? server->sock : max;
+        server = server->next;
+    }
+
+    int n = select(max + 1, &set, NULL, NULL, NULL);
+    if (n < 0) {
+        perror("select");
+        usleep(10000); // prevent busy looping
         return;
     }
 
-    Client_launch(s, sock, &addr);
+    server = servers;
+    while (server) {
+        if (FD_ISSET(server->sock, &set)) {
+            struct sockaddr_any addr;
+            socklen_t len = sizeof(addr);
+            int sock = accept(server->sock, &addr.sa, &len);
+            if (sock < 0) {
+                perror("accept");
+                return;
+            }
+
+            Client_launch(server, sock, &addr);
+        }
+        server = server->next;
+    }
 }
 
-void Server_loop(Server* s)
+void Server_loop(Server* servers)
 {
     while (true) {
-      Server_accept(s);
+      Server_accept(servers);
     }
 }
