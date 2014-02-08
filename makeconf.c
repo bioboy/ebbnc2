@@ -28,6 +28,7 @@
 #include "info.h"
 
 #define CONF_HEADER "conf.h"
+#define MINIMUM_PASSLEN 8
 
 void abortHandler(int signo)
 {
@@ -94,6 +95,7 @@ int main(int argc, char** argv)
         STAGE_BOUNCER_NEXT,
         STAGE_BOUNCER_LISTEN,
         STAGE_BOUNCER_REMOTE,
+        STAGE_BOUNCER_LOCAL,
         STAGE_BOUNCER_ANOTHER,
         STAGE_IDNT,
         STAGE_IDENT_TIMEOUT,
@@ -110,7 +112,8 @@ int main(int argc, char** argv)
         ERROR_NONE,
         ERROR_DEFAULT,
         ERROR_VALUE,
-        ERROR_STRDUP
+        ERROR_STRDUP,
+        ERROR_PASSLEN
     };
 
     signal(SIGINT, abortHandler);
@@ -183,10 +186,22 @@ int main(int argc, char** argv)
 
                 break;
             }
+            case STAGE_BOUNCER_LOCAL : {
+                char* value = promptInput("Local ip", "None");
+                if (value && strcasecmp(value, "None") != 0) {
+                    if (isValidIP(value)) {
+                        bouncer->localIP = strdup(value);
+                        if (!bouncer->localIP) { error = ERROR_STRDUP; }
+                    }
+                    else {
+                        error = ERROR_VALUE;
+                    }
+                }
+                break;
+            }
             case STAGE_BOUNCER_ANOTHER : {
                 bouncer->next = config->bouncers;
                 config->bouncers = bouncer;
-                printf("push %li\n", bouncer->listenPort);
                 bouncer = NULL;
 
                 char* value = promptInput("Another bouncer?", "yes");
@@ -285,11 +300,11 @@ int main(int argc, char** argv)
             }
             case STAGE_PASSWORD : {
                 char* value = getpass("Password: ");
-                if (*value != '\0') {
+                if (strlen(value) >= MINIMUM_PASSLEN) {
                     strncpy(key, value, sizeof(key) - 1);
                 }
                 else {
-                    error = ERROR_DEFAULT;
+                    error = ERROR_PASSLEN;
                 }
                 break;
             }
@@ -316,6 +331,9 @@ int main(int argc, char** argv)
             case ERROR_DEFAULT : {
                 fprintf(stderr, "No default value.\n");
                 break;
+            }
+            case ERROR_PASSLEN : {
+                fprintf(stderr, "Password must be %i or more characters.\n", MINIMUM_PASSLEN);
             }
         }
     }

@@ -157,6 +157,19 @@ bool Client_connect(Client* client)
         setsockopt(client->rSock, IPPROTO_TCP, TCP_NODELAY, (char*)&optval, sizeof(optval));
     }
 
+    if (client->bouncer->localIP) {
+        struct sockaddr_any lAddr;
+        if (!ipPortToSockaddr(client->bouncer->localIP, INADDR_ANY, &lAddr)) {
+            Client_errorReply(client, "invalid localip");
+            return false;
+        }
+
+        if (bind(client->rSock, &lAddr.sa, sockaddrLen(&lAddr)) < 0) {
+            Client_errnoReply(client, "bind", errno);
+            return false;
+        }
+    }
+
     if (connect(client->rSock, &client->rAddr.sa, sockaddrLen(&client->rAddr)) < 0) {
         Client_errnoReply(client, "connect", errno);
         return false;

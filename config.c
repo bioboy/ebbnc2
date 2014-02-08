@@ -92,8 +92,14 @@ Bouncer* Bouncer_parse(const char* s)
 
     if (sscanf(p, "%li", &bouncer->remotePort) != 1) { goto parseerror; }
 
-    p = strtok(p, " ");
-    if (p && *p == '\0') { goto parseerror; }
+    p = strtok(NULL, " ");
+    if (p && *p != '\0') {
+        bouncer->localIP = strdup(p);
+        if (!bouncer->localIP) { goto strduperror; }
+
+        p = strtok(NULL, " ");
+        if (p && p != '\0') { goto parseerror; }
+    }
 
     free(temp);
     return bouncer;
@@ -179,6 +185,11 @@ bool Config_sanityCheck(Config* config)
 
             if (!isValidPort(bouncer->remotePort)) {
               invalidValueError("remoteport");
+              insane = true;
+            }
+
+            if (bouncer->localIP && !isValidIP(bouncer->localIP)) {
+              invalidValueError("localip");
               insane = true;
             }
 

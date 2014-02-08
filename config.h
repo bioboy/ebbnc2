@@ -25,6 +25,7 @@ typedef struct Bouncer {
     long            listenPort;
     char*           remoteHost;
     long            remotePort;
+    char*           localIP;
     struct Bouncer* next;
 } Bouncer;
 
