@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
@@ -26,12 +27,22 @@
 
 #define IDENT_PORT      113
 
-bool identLookup(const struct sockaddr_any* localAddr,
-                 const struct sockaddr_any* peerAddr,
-                 time_t timeout, char* user)
+bool identLookup(int sock, time_t timeout, char* user)
 {
+    struct sockaddr_any peerAddr;
+    socklen_t peerLen = sizeof(peerAddr);
+    if (getpeername(sock, (struct sockaddr*) &peerAddr, &peerLen) < 0) {
+        return false;
+    }
+
+    struct sockaddr_any localAddr;
+    socklen_t localLen = sizeof(localAddr);
+    if (getsockname(sock, (struct sockaddr*) &localAddr, &localLen) < 0) {
+        return false;
+    }
+
     struct sockaddr_any addr;
-    memcpy(&addr, peerAddr, sizeof(addr));
+    memcpy(&addr, &peerAddr, sizeof(addr));
     switch (addr.san_family) {
         case AF_INET :
             addr.s4.sin_port = htons(IDENT_PORT);
@@ -43,37 +54,35 @@ bool identLookup(const struct sockaddr_any* localAddr,
             return false;
     }
 
-    int sock = socket(addr.san_family, SOCK_STREAM, 0);
-    if (sock < 0) { return false; }
+    int identSock = socket(addr.san_family, SOCK_STREAM, 0);
+    if (identSock < 0) { return false; }
 
-    setReadTimeout(sock, timeout);
-    setWriteTimeout(sock, timeout);
+    setReadTimeout(identSock, timeout);
+    setWriteTimeout(identSock, timeout);
 
-    if (connect(sock, &addr.sa, sockaddrLen(&addr)) < 0) {
-      close(sock);
+    if (connect(identSock, &addr.sa, sockaddrLen(&addr)) < 0) {
+      close(identSock);
       return false;
     }
 
-    FILE* fp = fdopen(sock, "r+");
+    FILE* fp = fdopen(identSock, "r+");
     if (!fp) {
-        close(sock);
+        close(identSock);
         return false;
     }
 
-    int localPort = portFromSockaddr(localAddr);
-    int remotePort = portFromSockaddr(peerAddr);
+    int localPort = portFromSockaddr(&localAddr);
+    int remotePort = portFromSockaddr(&peerAddr);
 
-    if (fprintf(fp, "%i, %i\r\n", remotePort, localPort) < 0) {
+    if (fprintf(fp, "%i,%i\r\n", remotePort, localPort) < 0) {
         fclose(fp);
         return false;
     }
 
     int replyLocalPort;
     int replyRemotePort;
-
-    int ret = fscanf(fp, "%i , %i : USERID :%*[^:]:%255s\r\n", &replyRemotePort,
+    int ret = fscanf(fp, "%i, %i : USERID :%*[^:]:%255s\r\n", &replyRemotePort,
                      &replyLocalPort, user);
     fclose(fp);
-
     return ret == 3 && replyLocalPort == localPort && replyRemotePort == remotePort;
 }

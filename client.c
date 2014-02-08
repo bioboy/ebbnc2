@@ -94,11 +94,11 @@ bool Client_sendIdnt(Client* client)
             return false;
         }
 
-        if (!identLookup(&client->server->addr, &client->cAddr, client->config->identTimeout, user)) {
+        if (!identLookup(client->cSock, client->config->identTimeout, user)) {
             strcpy(user, "*");
         }
     }
-
+puts(user);
     char ip[INET6_ADDRSTRLEN];
     if (!ipFromSockaddr(&client->cAddr, ip)) { return false; }
 
@@ -159,7 +159,7 @@ bool Client_connect(Client* client)
 
     if (client->bouncer->localIP) {
         struct sockaddr_any lAddr;
-        if (!ipPortToSockaddr(client->bouncer->localIP, INADDR_ANY, &lAddr)) {
+        if (!ipPortToSockaddr(client->bouncer->localIP, 0, &lAddr)) {
             Client_errorReply(client, "invalid localip");
             return false;
         }
