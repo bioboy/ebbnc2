@@ -100,6 +100,10 @@ Bouncer* Bouncer_parse(const char* s)
         p = strtok(NULL, " ");
         if (p && p != '\0') { goto parseerror; }
     }
+    else {
+        bouncer->localIP = strdup(bouncer->listenIP);
+        if (!bouncer->localIP) { goto strduperror; }
+    }
 
     free(temp);
     return bouncer;
@@ -144,12 +148,12 @@ void Config_free(Config** configp)
 
 void invalidValueError(const char* option)
 {
-  fprintf(stderr, "Config option has invalid value: %s\n", option);
+    fprintf(stderr, "Config option has invalid value: %s\n", option);
 }
 
 void requiredOptionError(const char* option)
 {
-  fprintf(stderr, "Config option is required: %s\n", option);
+    fprintf(stderr, "Config option is required: %s\n", option);
 }
 
 bool Config_sanityCheck(Config* config)
@@ -164,13 +168,13 @@ bool Config_sanityCheck(Config* config)
         Bouncer* bouncer = config->bouncers;
         while (bouncer && !insane) {
             if (!isValidIP(bouncer->listenIP)) {
-              invalidValueError("listenip");
-              insane = true;
+                invalidValueError("listenip");
+                insane = true;
             }
 
             if (!isValidPort(bouncer->listenPort)) {
-              invalidValueError("listenport");
-              insane = true;
+                invalidValueError("listenport");
+                insane = true;
             }
 
             if (!bouncer->remoteHost) {
@@ -179,20 +183,19 @@ bool Config_sanityCheck(Config* config)
             }
 
             if (!isValidHost(bouncer->remoteHost)) {
-              invalidValueError("remotehost");
-              insane = true;
+                invalidValueError("remotehost");
+                insane = true;
             }
 
             if (!isValidPort(bouncer->remotePort)) {
-              invalidValueError("remoteport");
-              insane = true;
+                invalidValueError("remoteport");
+                insane = true;
             }
 
-            if (bouncer->localIP && !isValidIP(bouncer->localIP)) {
-              invalidValueError("localip");
-              insane = true;
+            if (!isValidIP(bouncer->localIP)) {
+                invalidValueError("localip");
+                insane = true;
             }
-
             bouncer = bouncer->next;
         }
     }
@@ -451,8 +454,10 @@ char* Config_saveBuffer(Config* config)
 
     Bouncer* bouncer = config->bouncers;
     while (bouncer) {
-        buffer = strCatPrintf(buffer, "bouncer=%s:%i %s:%i\n", bouncer->listenIP, bouncer->listenPort,
-                                                               bouncer->remoteHost, bouncer->remotePort);
+        buffer = strCatPrintf(buffer, "bouncer=%s:%i %s:%i %s\n",
+                              bouncer->listenIP, bouncer->listenPort,
+                              bouncer->remoteHost, bouncer->remotePort,
+                              bouncer->localIP);
         if (!buffer) { return NULL; }
         bouncer = bouncer->next;
     }
